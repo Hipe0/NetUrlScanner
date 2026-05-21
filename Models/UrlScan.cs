@@ -1,0 +1,27 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace NetURLScanner.Models
+{
+    public class UrlScan
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [Url]
+        public string Url { get; set; } = string.Empty;
+
+        public string Status { get; set; } = string.Empty;
+        public int? StatusCode { get; set; }
+        public long ResponseTimeMs { get; set; }
+
+        public bool IsHttps { get; set; }
+
+        public int RiskScore { get; set; }
+        public string RiskLevel { get; set; } = string.Empty;
+
+        public string Reasons { get; set; } = string.Empty;
+        public string? ErrorMessage { get; set; }
+
+        public DateTime ScannedAt { get; set; } = DateTime.Now;
+    }
+}

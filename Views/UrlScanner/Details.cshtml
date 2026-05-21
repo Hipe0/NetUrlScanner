@@ -1,0 +1,115 @@
+﻿@model NetURLScanner.Models.UrlScan
+
+@{
+    ViewData["Title"] = "Chi tiết quét URL";
+
+    string badgeClass = Model.RiskLevel switch
+    {
+        "Safe" => "bg-success",
+        "Warning" => "bg-warning text-dark",
+        "Suspicious" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    int progressValue = Math.Clamp(Model.RiskScore, 0, 100);
+
+    string progressClass = Model.RiskLevel switch
+    {
+        "Safe" => "bg-success",
+        "Warning" => "bg-warning",
+        "Suspicious" => "bg-danger",
+        _ => "bg-secondary"
+    };
+}
+
+<div class="container mt-4">
+    <div class="mb-3">
+        <h2 class="fw-bold">Báo cáo phân tích URL</h2>
+        <p class="text-muted">Chi tiết kết quả quét và các lý do đánh giá rủi ro.</p>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3" style="word-break: break-all;">
+                @Model.Url
+            </h5>
+
+            <div class="mb-3">
+                <span class="badge @badgeClass fs-6">
+                    @Model.RiskLevel - @Model.RiskScore/100
+                </span>
+            </div>
+
+            <div class="progress mb-3" style="height: 18px;">
+                <div class="progress-bar @progressClass"
+                     role="progressbar"
+                     style="width: @progressValue%;">
+                    @progressValue%
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="border rounded p-3">
+                        <p class="text-muted mb-1">Trạng thái</p>
+                        <h6 class="mb-0">@Model.Status</h6>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3">
+                        <p class="text-muted mb-1">HTTP Code</p>
+                        <h6 class="mb-0">@(Model.StatusCode?.ToString() ?? "-")</h6>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3">
+                        <p class="text-muted mb-1">Response Time</p>
+                        <h6 class="mb-0">@Model.ResponseTimeMs ms</h6>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3">
+                        <p class="text-muted mb-1">HTTPS</p>
+                        <h6 class="mb-0">@(Model.IsHttps ? "Có" : "Không")</h6>
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger mt-3">
+                    <strong>Lỗi:</strong> @Model.ErrorMessage
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold">Lý do đánh giá</h5>
+
+            <ul class="list-group list-group-flush mt-3">
+                @foreach (var reason in Model.Reasons.Split(";"))
+                {
+                    if (!string.IsNullOrWhiteSpace(reason))
+                    {
+                        <li class="list-group-item">
+                            @reason.Trim()
+                        </li>
+                    }
+                }
+            </ul>
+        </div>
+    </div>
+
+    <p class="text-muted">
+        Thời gian quét: @Model.ScannedAt.ToString("dd/MM/yyyy HH:mm:ss")
+    </p>
+
+    <a asp-action="Index" class="btn btn-secondary">
+        Quay lại
+    </a>
+</div>

@@ -1,0 +1,50 @@
+﻿@model List<NetURLScanner.Models.UrlScan>
+
+@{
+    ViewData["Title"] = "Lịch sử quét URL";
+}
+
+<div class="container mt-4">
+    <h2>Lịch sử quét URL</h2>
+
+    <a asp-action="Index" class="btn btn-secondary mb-3">
+        Quay lại trang quét
+    </a>
+
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>URL</th>
+                <th>Status</th>
+                <th>HTTP Code</th>
+                <th>Response Time</th>
+                <th>Risk Level</th>
+                <th>Risk Score</th>
+                <th>Scanned At</th>
+                <th></th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Url</td>
+                    <td>@item.Status</td>
+                    <td>@(item.StatusCode?.ToString() ?? "-")</td>
+                    <td>@item.ResponseTimeMs ms</td>
+                    <td>@item.RiskLevel</td>
+                    <td>@item.RiskScore</td>
+                    <td>@item.ScannedAt.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                    <td>
+                        <a asp-action="Details"
+                           asp-route-id="@item.Id"
+                           class="btn btn-sm btn-outline-primary">
+                            Chi tiết
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,494 @@
+﻿@{
+    ViewData["Title"] = "Giới thiệu";
+}
+
+<div class="container mt-4">
+    <div class="mb-4">
+        <h1 class="fw-bold">Giới thiệu NetURLScanner</h1>
+        <p class="text-muted">
+            NetURLScanner là hệ thống web hỗ trợ kiểm tra trạng thái hoạt động của URL và đánh giá mức độ rủi ro
+            dựa trên các đặc điểm kỹ thuật, cấu trúc đường dẫn, dấu hiệu giả mạo tên miền và các rule phân tích bảo mật.
+        </p>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h4 class="fw-bold">1. Mục tiêu của hệ thống</h4>
+
+            <p>
+                Hệ thống được xây dựng nhằm hỗ trợ quản trị viên kiểm tra nhanh một URL bất kỳ để xác định URL đó
+                còn hoạt động hay không, phản hồi nhanh hay chậm, có sử dụng HTTPS hay không và có dấu hiệu đáng ngờ
+                liên quan đến giả mạo, lừa đảo hoặc cấu trúc bất thường hay không.
+            </p>
+
+            <p>
+                Sau mỗi lần quét, hệ thống sẽ lưu lại kết quả vào cơ sở dữ liệu SQL Server, bao gồm thông tin URL,
+                trạng thái hoạt động, mã phản hồi HTTP, thời gian phản hồi, điểm rủi ro, mức độ rủi ro và lý do đánh giá.
+                Nhờ đó, quản trị viên có thể theo dõi lịch sử kiểm tra và phân tích lại các URL đã quét.
+            </p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h4 class="fw-bold">2. Cách hệ thống quét URL</h4>
+
+            <p>
+                Khi người dùng nhập một URL và bấm nút <strong>Scan</strong>, hệ thống sẽ xử lý theo các bước sau:
+            </p>
+
+            <ol>
+                <li>
+                    <strong>Chuẩn hóa URL:</strong>
+                    nếu người dùng nhập thiếu giao thức, ví dụ <code>google.com</code>, hệ thống sẽ tự động chuyển thành
+                    <code>https://google.com</code>.
+                </li>
+
+                <li>
+                    <strong>Gửi request đến URL:</strong>
+                    hệ thống sử dụng <code>HttpClient</code> trong ASP.NET Core để gửi yêu cầu HTTP đến URL cần kiểm tra.
+                </li>
+
+                <li>
+                    <strong>Đo thời gian phản hồi:</strong>
+                    hệ thống sử dụng bộ đếm thời gian để tính URL phản hồi trong bao nhiêu mili giây.
+                </li>
+
+                <li>
+                    <strong>Ghi nhận HTTP Status Code:</strong>
+                    ví dụ <code>200</code>, <code>301</code>, <code>302</code>, <code>403</code>, <code>404</code>,
+                    <code>500</code> hoặc lỗi timeout.
+                </li>
+
+                <li>
+                    <strong>Phân loại trạng thái:</strong>
+                    dựa vào mã phản hồi và lỗi kết nối, hệ thống phân loại URL thành Online, Redirect, Client Error,
+                    Server Error hoặc Offline.
+                </li>
+
+                <li>
+                    <strong>Phân tích rủi ro:</strong>
+                    hệ thống áp dụng các rule kiểm tra như HTTPS, từ khóa đáng ngờ, domain giả mạo thương hiệu,
+                    ký tự Unicode bất thường, punycode, TLD rủi ro và cấu trúc URL.
+                </li>
+
+                <li>
+                    <strong>Lưu kết quả:</strong>
+                    toàn bộ kết quả quét được lưu vào SQL Server để phục vụ việc xem lại lịch sử và thống kê.
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h4 class="fw-bold">3. Cách phân loại trạng thái hoạt động</h4>
+
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Điều kiện</th>
+                            <th>Trạng thái</th>
+                            <th>Ý nghĩa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>HTTP 200 - 299</code></td>
+                            <td><span class="badge bg-success">Online</span></td>
+                            <td>URL phản hồi thành công và có thể truy cập được.</td>
+                        </tr>
+                        <tr>
+                            <td><code>HTTP 300 - 399</code></td>
+                            <td><span class="badge bg-primary">Redirect</span></td>
+                            <td>URL có chuyển hướng sang một địa chỉ khác.</td>
+                        </tr>
+                        <tr>
+                            <td><code>HTTP 400 - 499</code></td>
+                            <td><span class="badge bg-warning text-dark">Client Error</span></td>
+                            <td>URL tồn tại nhưng yêu cầu bị lỗi, ví dụ 403 Forbidden hoặc 404 Not Found.</td>
+                        </tr>
+                        <tr>
+                            <td><code>HTTP 500 - 599</code></td>
+                            <td><span class="badge bg-danger">Server Error</span></td>
+                            <td>Máy chủ phản hồi lỗi phía server.</td>
+                        </tr>
+                        <tr>
+                            <td>Timeout, DNS Error, Connection Error</td>
+                            <td><span class="badge bg-danger">Offline</span></td>
+                            <td>URL không phản hồi hoặc không thể kết nối.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h4 class="fw-bold">4. Cách tính điểm rủi ro</h4>
+
+            <p>
+                NetURLScanner sử dụng phương pháp <strong>rule-based scoring</strong>. Mỗi dấu hiệu bất thường sẽ được
+                cộng một số điểm rủi ro. Tổng điểm tối đa là <strong>100 điểm</strong>. Điểm càng cao thì URL càng có
+                nhiều dấu hiệu cần chú ý.
+            </p>
+
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nhóm rule</th>
+                            <th>Dấu hiệu kiểm tra</th>
+                            <th>Điểm cộng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Bảo mật kết nối</td>
+                            <td>URL không sử dụng HTTPS</td>
+                            <td>+15</td>
+                        </tr>
+                        <tr>
+                            <td>Trạng thái hoạt động</td>
+                            <td>URL không phản hồi hoặc bị lỗi kết nối</td>
+                            <td>+20</td>
+                        </tr>
+                        <tr>
+                            <td>Chuyển hướng</td>
+                            <td>URL trả về mã redirect như 301 hoặc 302</td>
+                            <td>+10</td>
+                        </tr>
+                        <tr>
+                            <td>Lỗi máy chủ</td>
+                            <td>URL trả về lỗi nhóm 5xx</td>
+                            <td>+15</td>
+                        </tr>
+                        <tr>
+                            <td>Hiệu năng</td>
+                            <td>Thời gian phản hồi lớn hơn 3 giây</td>
+                            <td>+10</td>
+                        </tr>
+                        <tr>
+                            <td>Hiệu năng</td>
+                            <td>Thời gian phản hồi lớn hơn 7 giây</td>
+                            <td>+15</td>
+                        </tr>
+                        <tr>
+                            <td>Cấu trúc URL</td>
+                            <td>URL quá dài, lớn hơn 100 ký tự</td>
+                            <td>+10</td>
+                        </tr>
+                        <tr>
+                            <td>Cấu trúc URL</td>
+                            <td>Query string dài bất thường</td>
+                            <td>+10</td>
+                        </tr>
+                        <tr>
+                            <td>Cấu trúc domain</td>
+                            <td>Domain có nhiều dấu gạch ngang</td>
+                            <td>+10</td>
+                        </tr>
+                        <tr>
+                            <td>Cấu trúc domain</td>
+                            <td>Domain có quá nhiều subdomain</td>
+                            <td>+15</td>
+                        </tr>
+                        <tr>
+                            <td>Địa chỉ IP</td>
+                            <td>URL sử dụng địa chỉ IP thay vì tên miền</td>
+                            <td>+20</td>
+                        </tr>
+                        <tr>
+                            <td>Port bất thường</td>
+                            <td>URL sử dụng port không phổ biến như 8080, 4444</td>
+                            <td>+10</td>
+                        </tr>
+                        <tr>
+                            <td>Từ khóa đáng ngờ</td>
+                            <td>URL chứa các từ như login, verify, account, bank, password, otp, token...</td>
+                            <td>+8 mỗi từ</td>
+                        </tr>
+                        <tr>
+                            <td>Đường dẫn nhạy cảm</td>
+                            <td>Path chứa các từ như admin, wp-admin, phpmyadmin, shell, cmd...</td>
+                            <td>+12 mỗi từ</td>
+                        </tr>
+                        <tr>
+                            <td>Homograph Attack</td>
+                            <td>Domain chứa ký tự Unicode bất thường</td>
+                            <td>+30</td>
+                        </tr>
+                        <tr>
+                            <td>Punycode</td>
+                            <td>Domain chứa tiền tố <code>xn--</code></td>
+                            <td>+25</td>
+                        </tr>
+                        <tr>
+                            <td>Giả mạo thương hiệu</td>
+                            <td>Domain chứa thương hiệu nổi tiếng nhưng không phải domain chính thức</td>
+                            <td>+25 đến +35</td>
+                        </tr>
+                        <tr>
+                            <td>Lookalike domain</td>
+                            <td>Domain gần giống thương hiệu nổi tiếng, ví dụ <code>go0gle.com</code></td>
+                            <td>+25 đến +30</td>
+                        </tr>
+                        <tr>
+                            <td>TLD rủi ro</td>
+                            <td>Domain dùng đuôi như .xyz, .top, .click, .site, .online...</td>
+                            <td>+10</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-info mt-3">
+                <strong>Lưu ý:</strong>
+                hệ thống không khẳng định một URL chắc chắn độc hại. Kết quả chỉ là đánh giá rủi ro dựa trên các rule
+                đã định nghĩa, giúp người dùng có thêm cơ sở để xem xét trước khi truy cập.
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h4 class="fw-bold">5. Cách phân loại mức rủi ro</h4>
+
+            <div class="row g-3 mt-2">
+                <div class="col-md-4">
+                    <div class="border rounded p-3 h-100">
+                        <h5><span class="badge bg-success">Safe</span></h5>
+                        <p class="mb-1"><strong>0 - 30 điểm</strong></p>
+                        <p class="text-muted mb-0">
+                            URL có ít hoặc không có dấu hiệu bất thường. Đây là nhóm URL có mức rủi ro thấp.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="border rounded p-3 h-100">
+                        <h5><span class="badge bg-warning text-dark">Warning</span></h5>
+                        <p class="mb-1"><strong>31 - 60 điểm</strong></p>
+                        <p class="text-muted mb-0">
+                            URL có một số dấu hiệu cần chú ý như redirect, response chậm, từ khóa nhạy cảm hoặc domain
+                            có cấu trúc không bình thường.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="border rounded p-3 h-100">
+                        <h5><span class="badge bg-danger">Suspicious</span></h5>
+                        <p class="mb-1"><strong>61 - 100 điểm</strong></p>
+                        <p class="text-muted mb-0">
+                            URL có nhiều dấu hiệu rủi ro như giả mạo thương hiệu, dùng ký tự thay thế, chứa từ khóa lừa đảo,
+                            TLD rủi ro hoặc không phản hồi ổn định.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h4 class="fw-bold">6. Ví dụ minh họa</h4>
+
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>URL</th>
+                            <th>Phân tích</th>
+                            <th>Kết quả dự kiến</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>https://google.com</code></td>
+                            <td>Sử dụng HTTPS, domain chính thức, không có dấu hiệu bất thường.</td>
+                            <td><span class="badge bg-success">Safe</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>https://go0gle.com</code></td>
+                            <td>Dùng số 0 thay cho chữ o, gần giống thương hiệu Google.</td>
+                            <td><span class="badge bg-warning text-dark">Warning</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>http://google-login-verify.xyz</code></td>
+                            <td>Không dùng HTTPS, chứa thương hiệu Google, có từ login/verify và dùng TLD .xyz.</td>
+                            <td><span class="badge bg-danger">Suspicious</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>https://google.com.verify-account.xyz</code></td>
+                            <td>Chứa google.com trong subdomain nhưng domain thật là verify-account.xyz.</td>
+                            <td><span class="badge bg-danger">Suspicious</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>http://192.168.1.20:8080/admin</code></td>
+                            <td>Dùng IP thay domain, không dùng HTTPS, port lạ và có path admin.</td>
+                            <td><span class="badge bg-danger">Suspicious</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h4 class="fw-bold">7. Công nghệ, ngôn ngữ và công cụ sử dụng</h4>
+
+            <p>
+                Dự án NetURLScanner được xây dựng theo mô hình ứng dụng web MVC, sử dụng các công nghệ phổ biến trong
+                hệ sinh thái .NET và SQL Server.
+            </p>
+
+            <div class="row g-3 mt-2">
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold">Ngôn ngữ C#</h6>
+                        <p class="text-muted mb-0">
+                            Sử dụng để xây dựng controller, service xử lý quét URL, tính điểm rủi ro và thao tác dữ liệu.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold">ASP.NET Core MVC</h6>
+                        <p class="text-muted mb-0">
+                            Framework chính để xây dựng ứng dụng web theo mô hình Model - View - Controller.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold">Entity Framework Core</h6>
+                        <p class="text-muted mb-0">
+                            ORM dùng để kết nối, truy vấn và lưu dữ liệu vào SQL Server thông qua các model C#.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold">SQL Server</h6>
+                        <p class="text-muted mb-0">
+                            Hệ quản trị cơ sở dữ liệu dùng để lưu lịch sử quét URL và kết quả đánh giá rủi ro.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold">Visual Studio 2026</h6>
+                        <p class="text-muted mb-0">
+                            Môi trường phát triển chính dùng để viết code, quản lý project, debug và chạy ứng dụng.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold">SQL Server Management Studio</h6>
+                        <p class="text-muted mb-0">
+                            Công cụ quản trị cơ sở dữ liệu, dùng để kiểm tra database, bảng dữ liệu và dữ liệu đã lưu.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold">Bootstrap</h6>
+                        <p class="text-muted mb-0">
+                            Thư viện giao diện giúp xây dựng layout, bảng dữ liệu, button, badge và card trực quan.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold">HTML, CSS, Razor View</h6>
+                        <p class="text-muted mb-0">
+                            Dùng để xây dựng giao diện hiển thị, form nhập URL, bảng lịch sử và trang báo cáo chi tiết.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-secondary mt-3 mb-0">
+                <strong>Kiến trúc tổng quát:</strong>
+                ASP.NET Core MVC xử lý request, UrlScannerService thực hiện quét và phân tích URL,
+                Entity Framework Core lưu dữ liệu vào SQL Server, sau đó Razor View hiển thị kết quả cho người dùng.
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-5">
+        <div class="card-body">
+            <h4 class="fw-bold">8. Thành viên thực hiện</h4>
+
+            <p class="text-muted">
+                Nhóm phát triển NetURLScanner gồm 3 thành viên, cùng tham gia xây dựng ý tưởng, phân tích chức năng,
+                thiết kế giao diện, xây dựng cơ sở dữ liệu và lập trình hệ thống.
+            </p>
+
+            <div class="row g-3 mt-2">
+                <div class="col-md-4">
+                    <div class="border rounded p-4 h-100 text-center">
+                        <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width: 70px; height: 70px; font-size: 24px; font-weight: bold;">
+                            HH
+                        </div>
+                        <h5 class="fw-bold mb-1">Hồ Đắc Hiệp</h5>
+                        <p class="text-muted mb-2">Thành viên nhóm phát triển</p>
+                        <p class="mb-0">
+                            Tham gia phân tích yêu cầu, xây dựng chức năng quét URL, xử lý logic tính điểm rủi ro
+                            và kiểm thử hệ thống.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="border rounded p-4 h-100 text-center">
+                        <div class="rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width: 70px; height: 70px; font-size: 24px; font-weight: bold;">
+                            TB
+                        </div>
+                        <h5 class="fw-bold mb-1">Trần Gia Bảo</h5>
+                        <p class="text-muted mb-2">Thành viên nhóm phát triển</p>
+                        <p class="mb-0">
+                            Tham gia thiết kế giao diện, xây dựng các trang hiển thị kết quả, lịch sử quét
+                            và hoàn thiện trải nghiệm người dùng.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="border rounded p-4 h-100 text-center">
+                        <div class="rounded-circle bg-danger text-white d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width: 70px; height: 70px; font-size: 24px; font-weight: bold;">
+                            PB
+                        </div>
+                        <h5 class="fw-bold mb-1">Phan Gia Bảo</h5>
+                        <p class="text-muted mb-2">Thành viên nhóm phát triển</p>
+                        <p class="mb-0">
+                            Tham gia thiết kế cơ sở dữ liệu, cấu hình Entity Framework Core, kiểm tra dữ liệu lưu trữ
+                            và hỗ trợ hoàn thiện chức năng hệ thống.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <p class="mb-0 text-muted">
+                    Đồ án lập trình web - NetURLScanner
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
