@@ -5,46 +5,167 @@
 }
 
 <div class="container mt-4">
-    <h2>Lịch sử quét URL</h2>
+    <div class="mb-4">
+        <h2 class="fw-bold">Lịch sử quét URL</h2>
+        <p class="text-muted mb-3">
+            Danh sách toàn bộ các URL đã được quét và đánh giá rủi ro.
+        </p>
 
-    <a asp-action="Index" class="btn btn-secondary mb-3">
-        Quay lại trang quét
-    </a>
+        <a asp-action="Index" class="btn btn-secondary">
+            Quay lại trang quét
+        </a>
+    </div>
 
-    <table class="table table-bordered table-hover">
-        <thead>
-            <tr>
-                <th>URL</th>
-                <th>Status</th>
-                <th>HTTP Code</th>
-                <th>Response Time</th>
-                <th>Risk Level</th>
-                <th>Risk Score</th>
-                <th>Scanned At</th>
-                <th></th>
-            </tr>
-        </thead>
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle mb-0 history-table">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th class="url-col text-start">URL</th>
+                            <th>Status</th>
+                            <th>HTTP Code</th>
+                            <th>Response Time</th>
+                            <th>Risk Level</th>
+                            <th>Risk Score</th>
+                            <th>Scanned At</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
 
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td>@item.Url</td>
-                    <td>@item.Status</td>
-                    <td>@(item.StatusCode?.ToString() ?? "-")</td>
-                    <td>@item.ResponseTimeMs ms</td>
-                    <td>@item.RiskLevel</td>
-                    <td>@item.RiskScore</td>
-                    <td>@item.ScannedAt.ToString("dd/MM/yyyy HH:mm:ss")</td>
-                    <td>
-                        <a asp-action="Details"
-                           asp-route-id="@item.Id"
-                           class="btn btn-sm btn-outline-primary">
-                            Chi tiết
-                        </a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            string badgeClass = item.RiskLevel switch
+                            {
+                                "Safe" => "bg-success",
+                                "Warning" => "bg-warning text-dark",
+                                "Suspicious" => "bg-danger",
+                                _ => "bg-secondary"
+                            };
+
+                            string statusClass = item.Status switch
+                            {
+                                "Online" => "text-success fw-semibold",
+                                "Redirect" => "text-primary fw-semibold",
+                                "Client Error" => "text-warning fw-semibold",
+                                "Server Error" => "text-danger fw-semibold",
+                                "Offline" => "text-danger fw-semibold",
+                                _ => "text-muted"
+                            };
+
+                            <tr>
+                                <td class="url-cell">
+                                    @item.Url
+                                </td>
+
+                                <td class="text-center @statusClass">
+                                    @item.Status
+                                </td>
+
+                                <td class="text-center">
+                                    @(item.StatusCode?.ToString() ?? "-")
+                                </td>
+
+                                <td class="text-center">
+                                    @item.ResponseTimeMs ms
+                                </td>
+
+                                <td class="text-center">
+                                    <span class="badge @badgeClass">
+                                        @item.RiskLevel
+                                    </span>
+                                </td>
+
+                                <td class="text-center fw-semibold">
+                                    @item.RiskScore
+                                </td>
+
+                                <td class="text-center scanned-col">
+                                    @item.ScannedAt.ToString("dd/MM/yyyy HH:mm:ss")
+                                </td>
+
+                                <td class="text-center action-col">
+                                    <a asp-action="Details"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-outline-primary">
+                                        Chi tiết
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    .history-table {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .history-table th,
+    .history-table td {
+        vertical-align: middle;
+        font-size: 14px;
+    }
+
+    .url-col {
+        width: 42%;
+    }
+
+    .url-cell {
+        max-width: 420px;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        line-height: 1.4;
+    }
+
+    .scanned-col {
+        width: 150px;
+        white-space: nowrap;
+    }
+
+    .action-col {
+        width: 90px;
+    }
+
+    .history-table th:nth-child(2),
+    .history-table td:nth-child(2) {
+        width: 95px;
+    }
+
+    .history-table th:nth-child(3),
+    .history-table td:nth-child(3) {
+        width: 90px;
+    }
+
+    .history-table th:nth-child(4),
+    .history-table td:nth-child(4) {
+        width: 115px;
+    }
+
+    .history-table th:nth-child(5),
+    .history-table td:nth-child(5) {
+        width: 110px;
+    }
+
+    .history-table th:nth-child(6),
+    .history-table td:nth-child(6) {
+        width: 90px;
+    }
+
+    @@media (max-width: 768px) {
+        .history-table {
+            min-width: 900px;
+        }
+
+        .url-col {
+            width: 350px;
+        }
+    }
+</style>

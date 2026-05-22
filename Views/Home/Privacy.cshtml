@@ -69,7 +69,8 @@
                 <li>
                     <strong>Phân tích rủi ro:</strong>
                     hệ thống áp dụng các rule kiểm tra như HTTPS, từ khóa đáng ngờ, domain giả mạo thương hiệu,
-                    ký tự Unicode bất thường, punycode, TLD rủi ro và cấu trúc URL.
+                    ký tự Unicode bất thường, punycode, TLD rủi ro, cấu trúc URL và nhóm nội dung rủi ro cao
+                    như cá cược/cờ bạc trực tuyến.
                 </li>
 
                 <li>
@@ -236,9 +237,14 @@
                             <td>+25 đến +30</td>
                         </tr>
                         <tr>
-                            <td>TLD rủi ro</td>
-                            <td>Domain dùng đuôi như .xyz, .top, .click, .site, .online...</td>
-                            <td>+10</td>
+                            <td>Nội dung rủi ro cao</td>
+                            <td>URL chứa từ khóa liên quan đến cá cược/cờ bạc như bet, betting, casino, gambling, nhà cái, tài xỉu, xóc đĩa...</td>
+                            <td>+60</td>
+                        </tr>
+                        <tr>
+                            <td>Rủi ro tài chính</td>
+                            <td>URL cá cược/cờ bạc có liên quan đến đăng nhập, tài khoản, nạp tiền, rút tiền hoặc giao dịch tài chính</td>
+                            <td>+20</td>
                         </tr>
                     </tbody>
                 </table>
@@ -248,6 +254,20 @@
                 <strong>Lưu ý:</strong>
                 hệ thống không khẳng định một URL chắc chắn độc hại. Kết quả chỉ là đánh giá rủi ro dựa trên các rule
                 đã định nghĩa, giúp người dùng có thêm cơ sở để xem xét trước khi truy cập.
+            </div>
+
+            <div class="alert alert-warning mt-3">
+                <strong>Lưu ý về nội dung cá cược/cờ bạc:</strong>
+                Các URL có dấu hiệu liên quan đến cá cược/cờ bạc trực tuyến được hệ thống xếp vào nhóm rủi ro cao.
+                Nhóm URL này có thể tiềm ẩn nguy cơ mất tài sản, lừa đảo tài chính, thu thập thông tin cá nhân
+                hoặc dẫn dụ người dùng thực hiện giao dịch không an toàn.
+            </div>
+
+            <div class="alert alert-warning mt-3">
+                <strong>Lưu ý về nội dung cá cược/cờ bạc:</strong>
+                Các URL có dấu hiệu liên quan đến cá cược/cờ bạc trực tuyến được hệ thống xếp vào nhóm rủi ro cao.
+                Nhóm URL này có thể tiềm ẩn nguy cơ mất tài sản, lừa đảo tài chính, thu thập thông tin cá nhân
+                hoặc dẫn dụ người dùng thực hiện giao dịch không an toàn.
             </div>
         </div>
     </div>
@@ -329,6 +349,21 @@
                         <tr>
                             <td><code>http://192.168.1.20:8080/admin</code></td>
                             <td>Dùng IP thay domain, không dùng HTTPS, port lạ và có path admin.</td>
+                            <td><span class="badge bg-danger">Suspicious</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>https://f8bet.vn</code></td>
+                            <td>URL chứa từ khóa liên quan đến cá cược/cờ bạc. Đây là nhóm nội dung rủi ro cao, có thể tiềm ẩn nguy cơ mất tài sản hoặc lừa đảo tài chính.</td>
+                            <td><span class="badge bg-danger">Suspicious</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>https://casino-online.xyz</code></td>
+                            <td>URL chứa từ khóa casino và sử dụng TLD .xyz. Hệ thống đánh giá đây là URL có rủi ro cao.</td>
+                            <td><span class="badge bg-danger">Suspicious</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>https://casino-login-payment.xyz</code></td>
+                            <td>URL liên quan đến cá cược/cờ bạc, có từ khóa login/payment và dùng TLD rủi ro. Đây là trường hợp có nguy cơ liên quan đến tài khoản hoặc giao dịch tài chính.</td>
                             <td><span class="badge bg-danger">Suspicious</span></td>
                         </tr>
                     </tbody>

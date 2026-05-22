@@ -233,6 +233,57 @@ namespace NetURLScanner.Services
                 }
             }
 
+            string[] gamblingWords =
+            {
+                "bet", "betting", "casino", "gambling", "poker",
+                "slot", "jackpot", "odds", "wager", "baccarat",
+                "roulette", "sportsbook", "bookmaker",
+
+                // Từ khóa phổ biến tại Việt Nam
+                "taixiu", "tai-xiu", "xocdia", "xoc-dia",
+                "keonhacai", "keo-nha-cai", "nhacai", "nha-cai",
+                "cacuoc", "ca-cuoc", "danhbai", "danh-bai",
+                "bong88", "f8bet", "fun88", "m88", "kubet",
+                "fb88", "w88", "188bet"
+            };
+
+            bool hasGamblingKeyword = false;
+            string? matchedGamblingWord = null;
+
+            foreach (var word in gamblingWords)
+            {
+                if (url.ToLower().Contains(word))
+                {
+                    hasGamblingKeyword = true;
+                    matchedGamblingWord = word;
+
+                    // Cá cược/cờ bạc được xem là nhóm rủi ro cao
+                    score += 60;
+
+                    reasons.Add($"URL chứa từ khóa liên quan đến cá cược/cờ bạc: {word}");
+                    reasons.Add("URL thuộc nhóm nội dung rủi ro cao, có thể tiềm ẩn nguy cơ mất tài sản, lừa đảo tài chính hoặc thu thập thông tin cá nhân.");
+
+                    break;
+                }
+            }
+
+            string[] financialActionWords =
+            {
+                "login", "account", "payment", "deposit", "withdraw",
+                "wallet", "nap-tien", "ruttien", "rut-tien",
+                "dangnhap", "dang-nhap", "register", "signup",
+                "cash", "money", "banking"
+            };
+
+            bool hasFinancialActionWord = financialActionWords.Any(word =>
+                url.ToLower().Contains(word));
+
+            if (hasGamblingKeyword && hasFinancialActionWord)
+            {
+                score += 20;
+                reasons.Add("URL cá cược/cờ bạc có liên quan đến đăng nhập, tài khoản, nạp tiền, rút tiền hoặc giao dịch tài chính.");
+            }
+
             string[] dangerousPathWords =
             {
                 "wp-admin", "admin", "phpmyadmin", "cpanel", "shell", "cmd"

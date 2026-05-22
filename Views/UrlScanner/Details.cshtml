@@ -3,6 +3,19 @@
 @{
     ViewData["Title"] = "Chi tiết quét URL";
 
+    bool isGamblingUrl =
+        !string.IsNullOrEmpty(Model.Reasons)
+        && (Model.Reasons.Contains("cá cược", StringComparison.OrdinalIgnoreCase)
+            || Model.Reasons.Contains("cờ bạc", StringComparison.OrdinalIgnoreCase));
+
+    string riskDisplayName = Model.RiskLevel switch
+    {
+        "Safe" => "Safe - An toàn",
+        "Warning" => "Warning - Cần chú ý",
+        "Suspicious" => "Suspicious - Nguy hiểm",
+        _ => Model.RiskLevel
+    };
+
     string badgeClass = Model.RiskLevel switch
     {
         "Safe" => "bg-success",
@@ -20,67 +33,115 @@
         "Suspicious" => "bg-danger",
         _ => "bg-secondary"
     };
+
+    string statusClass = Model.Status switch
+    {
+        "Online" => "text-success",
+        "Redirect" => "text-primary",
+        "Client Error" => "text-warning",
+        "Server Error" => "text-danger",
+        "Offline" => "text-danger",
+        _ => "text-muted"
+    };
+
+    var reasons = string.IsNullOrWhiteSpace(Model.Reasons)
+        ? new List<string>()
+        : Model.Reasons
+            .Split(";", StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
 }
 
 <div class="container mt-4">
-    <div class="mb-3">
+    <div class="mb-4">
         <h2 class="fw-bold">Báo cáo phân tích URL</h2>
-        <p class="text-muted">Chi tiết kết quả quét và các lý do đánh giá rủi ro.</p>
+        <p class="text-muted mb-0">
+            Chi tiết trạng thái hoạt động, điểm rủi ro và các lý do hệ thống đánh giá URL.
+        </p>
     </div>
+
+    @if (isGamblingUrl)
+    {
+        <div class="alert alert-danger shadow-sm border-0 mb-4">
+            <h5 class="alert-heading fw-bold mb-2">Cảnh báo nội dung rủi ro cao</h5>
+            <p class="mb-0">
+                URL này có dấu hiệu liên quan đến cá cược/cờ bạc trực tuyến. Đây là nhóm nội dung rủi ro cao,
+                có thể tiềm ẩn nguy cơ mất tài sản, lừa đảo tài chính, thu thập thông tin cá nhân
+                hoặc dẫn dụ người dùng thực hiện giao dịch không an toàn.
+            </p>
+        </div>
+    }
 
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
-            <h5 class="fw-bold mb-3" style="word-break: break-all;">
-                @Model.Url
-            </h5>
+            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                <div>
+                    <p class="text-muted mb-1">URL đã quét</p>
+                    <h5 class="fw-bold mb-0" style="word-break: break-all;">
+                        @Model.Url
+                    </h5>
+                </div>
 
-            <div class="mb-3">
-                <span class="badge @badgeClass fs-6">
-                    @Model.RiskLevel - @Model.RiskScore/100
-                </span>
+                <div class="text-lg-end">
+                    <p class="text-muted mb-1">Mức rủi ro</p>
+                    <span class="badge @badgeClass fs-6 px-3 py-2">
+                        @riskDisplayName - @Model.RiskScore/100
+                    </span>
+                </div>
             </div>
 
-            <div class="progress mb-3" style="height: 18px;">
+            <div class="progress mb-4" style="height: 20px;">
                 <div class="progress-bar @progressClass"
                      role="progressbar"
-                     style="width: @progressValue%;">
+                     style="width: @progressValue%;"
+                     aria-valuenow="@progressValue"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
                     @progressValue%
                 </div>
             </div>
 
             <div class="row g-3">
                 <div class="col-md-3">
-                    <div class="border rounded p-3">
+                    <div class="border rounded p-3 h-100">
                         <p class="text-muted mb-1">Trạng thái</p>
-                        <h6 class="mb-0">@Model.Status</h6>
+                        <h6 class="mb-0 fw-bold @statusClass">@Model.Status</h6>
                     </div>
                 </div>
 
                 <div class="col-md-3">
-                    <div class="border rounded p-3">
+                    <div class="border rounded p-3 h-100">
                         <p class="text-muted mb-1">HTTP Code</p>
-                        <h6 class="mb-0">@(Model.StatusCode?.ToString() ?? "-")</h6>
+                        <h6 class="mb-0 fw-bold">@(Model.StatusCode?.ToString() ?? "-")</h6>
                     </div>
                 </div>
 
                 <div class="col-md-3">
-                    <div class="border rounded p-3">
+                    <div class="border rounded p-3 h-100">
                         <p class="text-muted mb-1">Response Time</p>
-                        <h6 class="mb-0">@Model.ResponseTimeMs ms</h6>
+                        <h6 class="mb-0 fw-bold">@Model.ResponseTimeMs ms</h6>
                     </div>
                 </div>
 
                 <div class="col-md-3">
-                    <div class="border rounded p-3">
+                    <div class="border rounded p-3 h-100">
                         <p class="text-muted mb-1">HTTPS</p>
-                        <h6 class="mb-0">@(Model.IsHttps ? "Có" : "Không")</h6>
+                        @if (Model.IsHttps)
+                        {
+                            <h6 class="mb-0 fw-bold text-success">Có</h6>
+                        }
+                        else
+                        {
+                            <h6 class="mb-0 fw-bold text-danger">Không</h6>
+                        }
                     </div>
                 </div>
             </div>
 
-            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
             {
-                <div class="alert alert-danger mt-3">
+                <div class="alert alert-danger mt-3 mb-0">
                     <strong>Lỗi:</strong> @Model.ErrorMessage
                 </div>
             }
@@ -89,27 +150,71 @@
 
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
-            <h5 class="fw-bold">Lý do đánh giá</h5>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <h5 class="fw-bold mb-1">Lý do đánh giá</h5>
+                    <p class="text-muted mb-0">
+                        Các rule được kích hoạt trong quá trình phân tích URL.
+                    </p>
+                </div>
 
-            <ul class="list-group list-group-flush mt-3">
-                @foreach (var reason in Model.Reasons.Split(";"))
-                {
-                    if (!string.IsNullOrWhiteSpace(reason))
+                <span class="badge @badgeClass">
+                    @Model.RiskScore điểm
+                </span>
+            </div>
+
+            @if (reasons.Any())
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var reason in reasons)
                     {
-                        <li class="list-group-item">
-                            @reason.Trim()
+                        bool isDangerReason =
+                            reason.Contains("cá cược", StringComparison.OrdinalIgnoreCase)
+                            || reason.Contains("cờ bạc", StringComparison.OrdinalIgnoreCase)
+                            || reason.Contains("mất tài sản", StringComparison.OrdinalIgnoreCase)
+                            || reason.Contains("lừa đảo", StringComparison.OrdinalIgnoreCase);
+
+                        <li class="list-group-item d-flex align-items-start gap-2 px-0">
+                            @if (isDangerReason)
+                            {
+                                <span class="badge bg-danger mt-1">!</span>
+                            }
+                            else if (Model.RiskLevel == "Safe")
+                            {
+                                <span class="badge bg-success mt-1">✓</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark mt-1">!</span>
+                            }
+
+                            <span>@reason</span>
                         </li>
                     }
-                }
-            </ul>
+                </ul>
+            }
+            else
+            {
+                <div class="alert alert-secondary mb-0">
+                    Không có lý do đánh giá được ghi nhận.
+                </div>
+            }
         </div>
     </div>
 
-    <p class="text-muted">
-        Thời gian quét: @Model.ScannedAt.ToString("dd/MM/yyyy HH:mm:ss")
-    </p>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
+        <p class="text-muted mb-0">
+            Thời gian quét: @Model.ScannedAt.ToString("dd/MM/yyyy HH:mm:ss")
+        </p>
 
-    <a asp-action="Index" class="btn btn-secondary">
-        Quay lại
-    </a>
+        <div>
+            <a asp-action="Index" class="btn btn-secondary">
+                Quay lại
+            </a>
+
+            <a asp-action="History" class="btn btn-outline-primary">
+                Xem lịch sử
+            </a>
+        </div>
+    </div>
 </div>
