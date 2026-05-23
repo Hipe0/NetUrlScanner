@@ -1,11 +1,20 @@
 ﻿using System.Diagnostics;
 using System.Net;
+using Microsoft.EntityFrameworkCore;
+using NetURLScanner.Data;
 using NetURLScanner.Models;
 
 namespace NetURLScanner.Services
 {
     public class UrlScannerService
     {
+        private readonly ApplicationDbContext _context;
+
+        public UrlScannerService(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
         public async Task<UrlScan> ScanAsync(string inputUrl)
         {
             var url = NormalizeUrl(inputUrl);
@@ -86,13 +95,46 @@ namespace NetURLScanner.Services
                 result.ResponseTimeMs = stopwatch.ElapsedMilliseconds;
             }
 
-            var risk = AnalyzeRisk(url, result);
+            var trustedBrands = await GetTrustedBrandsAsync();
+
+            var risk = AnalyzeRisk(url, result, trustedBrands);
 
             result.RiskScore = risk.Score;
             result.RiskLevel = risk.Level;
             result.Reasons = string.Join("; ", risk.Reasons);
 
             return result;
+        }
+
+        private async Task<Dictionary<string, string>> GetTrustedBrandsAsync()
+        {
+            var trustedBrands = TrustedBrandDefaults.GetDefaultBrands();
+
+            var databaseBrands = await _context.TrustedBrands
+                .Where(x => x.IsActive)
+                .ToListAsync();
+
+            foreach (var brand in databaseBrands)
+            {
+                string brandName = brand.BrandName.Trim().ToLower();
+                string domain = brand.OfficialDomain.Trim().ToLower();
+
+                if (string.IsNullOrWhiteSpace(brandName) || string.IsNullOrWhiteSpace(domain))
+                {
+                    continue;
+                }
+
+                if (!trustedBrands.ContainsKey(brandName))
+                {
+                    trustedBrands.Add(brandName, domain);
+                }
+                else
+                {
+                    trustedBrands[brandName] = domain;
+                }
+            }
+
+            return trustedBrands;
         }
 
         private string NormalizeUrl(string url)
@@ -108,7 +150,10 @@ namespace NetURLScanner.Services
             return url;
         }
 
-        private RiskResult AnalyzeRisk(string url, UrlScan scan)
+        private RiskResult AnalyzeRisk(
+            string url,
+            UrlScan scan,
+            Dictionary<string, string> trustedBrands)
         {
             int score = 0;
             List<string> reasons = new();
@@ -125,9 +170,13 @@ namespace NetURLScanner.Services
                 reasons.Add("URL không đúng định dạng");
             }
 
-            string host = uri?.Host.ToLower() ?? url.ToLower();
+            string lowerUrl = url.ToLower();
+            string host = uri?.Host.ToLower() ?? lowerUrl;
             string path = uri?.AbsolutePath.ToLower() ?? "";
             string query = uri?.Query.ToLower() ?? "";
+
+            bool isOfficialTrustedDomain = trustedBrands.Values.Any(domain =>
+                host == domain || host.EndsWith("." + domain));
 
             if (!scan.IsHttps)
             {
@@ -137,8 +186,8 @@ namespace NetURLScanner.Services
 
             if (scan.Status == "Offline")
             {
-                score += 20;
-                reasons.Add("URL không phản hồi hoặc bị lỗi");
+                score += 35;
+                reasons.Add("URL không phản hồi hoặc bị lỗi kết nối, cần thận trọng khi truy cập");
             }
 
             if (scan.Status == "Redirect")
@@ -217,19 +266,22 @@ namespace NetURLScanner.Services
 
             string[] suspiciousWords =
             {
-                "login", "verify", "account", "bank", "wallet",
+                "login", "verify", "account", "wallet",
                 "gift", "free", "bonus", "secure", "update",
                 "confirm", "password", "payment", "admin",
                 "signin", "reset", "otp", "token", "invoice",
                 "billing", "crypto", "airdrop"
             };
 
-            foreach (var word in suspiciousWords)
+            if (!isOfficialTrustedDomain)
             {
-                if (url.ToLower().Contains(word))
+                foreach (var word in suspiciousWords)
                 {
-                    score += 8;
-                    reasons.Add($"URL chứa từ khóa đáng ngờ: {word}");
+                    if (lowerUrl.Contains(word))
+                    {
+                        score += 8;
+                        reasons.Add($"URL chứa từ khóa đáng ngờ: {word}");
+                    }
                 }
             }
 
@@ -239,7 +291,6 @@ namespace NetURLScanner.Services
                 "slot", "jackpot", "odds", "wager", "baccarat",
                 "roulette", "sportsbook", "bookmaker",
 
-                // Từ khóa phổ biến tại Việt Nam
                 "taixiu", "tai-xiu", "xocdia", "xoc-dia",
                 "keonhacai", "keo-nha-cai", "nhacai", "nha-cai",
                 "cacuoc", "ca-cuoc", "danhbai", "danh-bai",
@@ -248,16 +299,13 @@ namespace NetURLScanner.Services
             };
 
             bool hasGamblingKeyword = false;
-            string? matchedGamblingWord = null;
 
             foreach (var word in gamblingWords)
             {
-                if (url.ToLower().Contains(word))
+                if (lowerUrl.Contains(word))
                 {
                     hasGamblingKeyword = true;
-                    matchedGamblingWord = word;
 
-                    // Cá cược/cờ bạc được xem là nhóm rủi ro cao
                     score += 60;
 
                     reasons.Add($"URL chứa từ khóa liên quan đến cá cược/cờ bạc: {word}");
@@ -276,7 +324,7 @@ namespace NetURLScanner.Services
             };
 
             bool hasFinancialActionWord = financialActionWords.Any(word =>
-                url.ToLower().Contains(word));
+                lowerUrl.Contains(word));
 
             if (hasGamblingKeyword && hasFinancialActionWord)
             {
@@ -289,16 +337,19 @@ namespace NetURLScanner.Services
                 "wp-admin", "admin", "phpmyadmin", "cpanel", "shell", "cmd"
             };
 
-            foreach (var word in dangerousPathWords)
+            if (!isOfficialTrustedDomain)
             {
-                if (path.Contains(word))
+                foreach (var word in dangerousPathWords)
                 {
-                    score += 12;
-                    reasons.Add($"Đường dẫn chứa từ khóa nhạy cảm: {word}");
+                    if (path.Contains(word))
+                    {
+                        score += 12;
+                        reasons.Add($"Đường dẫn chứa từ khóa nhạy cảm: {word}");
+                    }
                 }
             }
 
-            var brandRisk = CheckBrandImpersonation(host);
+            var brandRisk = CheckBrandImpersonation(host, url, trustedBrands);
             score += brandRisk.Score;
             reasons.AddRange(brandRisk.Reasons);
 
@@ -324,43 +375,49 @@ namespace NetURLScanner.Services
             {
                 Score = score,
                 Level = level,
-                Reasons = reasons
+                Reasons = reasons.Distinct().ToList()
             };
         }
 
-        private RiskResult CheckBrandImpersonation(string host)
+        private RiskResult CheckBrandImpersonation(
+            string host,
+            string fullUrl,
+            Dictionary<string, string> trustedBrands)
         {
             int score = 0;
             List<string> reasons = new();
 
-            var trustedBrands = new Dictionary<string, string>
-            {
-                { "google", "google.com" },
-                { "facebook", "facebook.com" },
-                { "microsoft", "microsoft.com" },
-                { "apple", "apple.com" },
-                { "github", "github.com" },
-                { "paypal", "paypal.com" },
-                { "shopee", "shopee.vn" },
-                { "lazada", "lazada.vn" },
-                { "tiktok", "tiktok.com" },
-                { "netflix", "netflix.com" },
-                { "instagram", "instagram.com" },
-                { "amazon", "amazon.com" },
-                { "steam", "steampowered.com" }
-            };
-
             string mainName = GetMainDomainName(host);
             string normalizedMainName = NormalizeLookalike(mainName);
+            string lowerFullUrl = fullUrl.ToLower();
+
+            bool isOfficialTrustedDomain = trustedBrands.Values.Any(domain =>
+                host == domain || host.EndsWith("." + domain));
+
+            if (isOfficialTrustedDomain)
+            {
+                return new RiskResult
+                {
+                    Score = 0,
+                    Level = "",
+                    Reasons = new List<string>()
+                };
+            }
 
             foreach (var brand in trustedBrands)
             {
-                string brandName = brand.Key;
-                string officialDomain = brand.Value;
+                string brandName = brand.Key.ToLower();
+                string officialDomain = brand.Value.ToLower();
 
                 if (host == officialDomain || host.EndsWith("." + officialDomain))
                 {
                     continue;
+                }
+
+                if (lowerFullUrl.Contains(brandName) && !host.Contains(brandName))
+                {
+                    score += 35;
+                    reasons.Add($"URL chứa tên thương hiệu {brandName} trong đường dẫn hoặc tham số nhưng domain thật không phải domain chính thức");
                 }
 
                 if (host.Contains(officialDomain))
@@ -369,10 +426,18 @@ namespace NetURLScanner.Services
                     reasons.Add($"Domain chứa {officialDomain} nhưng không phải domain chính thức");
                 }
 
-                if (mainName.Contains(brandName) && host != officialDomain)
+                bool isShortBrand = brandName.Length <= 3;
+
+                if (!isShortBrand && mainName.Contains(brandName) && host != officialDomain)
                 {
                     score += 25;
                     reasons.Add($"Domain có chứa tên thương hiệu {brandName} nhưng không phải domain chính thức");
+                }
+
+                if (isShortBrand && mainName == brandName && host != officialDomain)
+                {
+                    score += 25;
+                    reasons.Add($"Domain sử dụng tên viết tắt {brandName} nhưng không phải domain chính thức");
                 }
 
                 if (normalizedMainName == brandName && mainName != brandName)
@@ -381,9 +446,14 @@ namespace NetURLScanner.Services
                     reasons.Add($"Domain dùng ký tự thay thế để giống {brandName}");
                 }
 
+                bool canUseDistanceCheck =
+                    mainName.Length >= 5 &&
+                    brandName.Length >= 5 &&
+                    Math.Abs(mainName.Length - brandName.Length) <= 2;
+
                 int distance = LevenshteinDistance(mainName, brandName);
 
-                if (distance > 0 && distance <= 2)
+                if (canUseDistanceCheck && distance > 0 && distance <= 2)
                 {
                     score += 25;
                     reasons.Add($"Domain gần giống thương hiệu {brandName}");
@@ -394,7 +464,7 @@ namespace NetURLScanner.Services
             {
                 Score = score,
                 Level = "",
-                Reasons = reasons
+                Reasons = reasons.Distinct().ToList()
             };
         }
 
@@ -406,7 +476,8 @@ namespace NetURLScanner.Services
             string[] riskyTlds =
             {
                 ".xyz", ".top", ".click", ".info", ".shop",
-                ".online", ".work", ".rest", ".site", ".live"
+                ".online", ".work", ".rest", ".site", ".live",
+                ".vip", ".club", ".buzz", ".icu", ".cyou", ".monster"
             };
 
             if (riskyTlds.Any(tld => host.EndsWith(tld)))
@@ -435,6 +506,28 @@ namespace NetURLScanner.Services
 
         private string GetMainDomainName(string host)
         {
+            host = host.ToLower().Trim();
+
+            string[] vietnameseSecondLevelTlds =
+            {
+                ".com.vn", ".net.vn", ".org.vn", ".gov.vn", ".edu.vn",
+                ".biz.vn", ".info.vn", ".name.vn", ".pro.vn", ".health.vn"
+            };
+
+            foreach (var tld in vietnameseSecondLevelTlds)
+            {
+                if (host.EndsWith(tld))
+                {
+                    string withoutTld = host.Substring(0, host.Length - tld.Length);
+                    var labels = withoutTld.Split('.', StringSplitOptions.RemoveEmptyEntries);
+
+                    if (labels.Length > 0)
+                    {
+                        return labels[^1];
+                    }
+                }
+            }
+
             var parts = host.Split('.', StringSplitOptions.RemoveEmptyEntries);
 
             if (parts.Length < 2)

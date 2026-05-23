@@ -1,0 +1,97 @@
+﻿@model NetURLScanner.Models.TrustedBrand
+
+@{
+    ViewData["Title"] = "Thêm URL uy tín";
+    var categories = ViewBag.Categories as List<string> ?? new List<string>();
+}
+
+<div class="container mt-4">
+    <div class="mb-4">
+        <h2 class="fw-bold">Thêm URL uy tín</h2>
+        <p class="text-muted mb-0">
+            Thêm domain chính thức của thương hiệu để hệ thống dùng khi phát hiện URL giả mạo.
+        </p>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="BrandName" class="form-label fw-semibold">
+                        Tên thương hiệu
+                    </label>
+
+                    <input asp-for="BrandName"
+                           class="form-control"
+                           placeholder="Ví dụ: vietcombank, momo, shopee" />
+
+                    <span asp-validation-for="BrandName" class="text-danger"></span>
+
+                    <div class="form-text">
+                        Nên nhập dạng chữ thường, không dấu, không khoảng trắng. Ví dụ: <code>vietcombank</code>.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="OfficialDomain" class="form-label fw-semibold">
+                        Domain chính thức
+                    </label>
+
+                    <input asp-for="OfficialDomain"
+                           class="form-control"
+                           placeholder="Ví dụ: vietcombank.com.vn" />
+
+                    <span asp-validation-for="OfficialDomain" class="text-danger"></span>
+
+                    <div class="form-text">
+                        Chỉ nhập domain chính. Không nhập <code>https://</code>, không nhập <code>/login</code>,
+                        không nhập query string như <code>?id=123</code>.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Category" class="form-label fw-semibold">
+                        Lĩnh vực
+                    </label>
+
+                    <select asp-for="Category" class="form-select">
+                        <option value="">-- Chọn lĩnh vực --</option>
+
+                        @foreach (var category in categories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </select>
+
+                    <span asp-validation-for="Category" class="text-danger"></span>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>Gợi ý:</strong>
+                    Nếu thêm ngân hàng, ví điện tử hoặc sàn thương mại điện tử, hãy kiểm tra domain chính thức
+                    từ website hoặc nguồn đáng tin cậy trước khi lưu vào hệ thống.
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        Lưu domain
+                    </button>
+
+                    <a asp-action="Index" class="btn btn-secondary">
+                        Quay lại
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

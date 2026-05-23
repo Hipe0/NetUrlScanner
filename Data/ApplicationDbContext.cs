@@ -11,5 +11,16 @@ namespace NetURLScanner.Data
         }
 
         public DbSet<UrlScan> UrlScans { get; set; }
+
+        public DbSet<TrustedBrand> TrustedBrands { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<TrustedBrand>()
+                .HasIndex(x => x.OfficialDomain)
+                .IsUnique();
+        }
     }
 }

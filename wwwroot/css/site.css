@@ -1,22 +1,258 @@
+/* Base layout */
 html {
-  font-size: 14px;
+    font-size: 14px;
+    position: relative;
+    min-height: 100%;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+    html {
+        font-size: 16px;
+    }
 }
 
 body {
-  margin-bottom: 60px;
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8fafc;
+    color: #1f2937;
+}
+
+/* Main content */
+main {
+    flex: 1;
+}
+
+.container {
+    max-width: 1200px;
+}
+
+/* Navbar */
+.navbar {
+    background-color: #ffffff !important;
+}
+
+.navbar-brand {
+    white-space: normal;
+    text-align: center;
+    word-break: normal;
+    font-weight: 700;
+    color: #111827 !important;
+}
+
+.nav-link {
+    font-weight: 500;
+}
+
+    .nav-link:hover {
+        color: #0d6efd !important;
+    }
+
+/* Links */
+a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+    a:hover {
+        color: #0a58ca;
+        text-decoration: underline;
+    }
+
+/* Buttons */
+.btn {
+    border-radius: 8px;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+    .btn-primary:hover {
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+    }
+
+.btn-secondary {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-danger:hover,
+.btn-outline-warning:hover,
+.btn-outline-success:hover {
+    text-decoration: none;
+}
+
+/* Cards */
+.card {
+    border-radius: 12px;
+}
+
+    .card.border-0 {
+        border: 0 !important;
+    }
+
+.shadow-sm {
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* Tables */
+.table {
+    background-color: #ffffff;
+}
+
+    .table th {
+        font-weight: 700;
+        color: #111827;
+        vertical-align: middle;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+.table-responsive {
+    border-radius: 12px;
+}
+
+/* Badges */
+.badge {
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* Forms */
+.form-control,
+.form-select {
+    border-radius: 8px;
+}
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    }
+
+.form-label {
+    color: #111827;
+}
+
+.form-text {
+    color: #6b7280;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 10px;
+}
+
+/* Risk progress */
+.progress {
+    border-radius: 999px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    font-weight: 600;
+}
+
+/* Footer */
+.footer {
+    margin-top: auto;
+    width: 100%;
+    white-space: nowrap;
+    line-height: 60px;
+    background-color: #ffffff;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Border helpers */
+.border-top {
+    border-top: 1px solid #e5e7eb !important;
+}
+
+.border-bottom {
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+.box-shadow {
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.05);
+}
+
+/* URL text wrapping */
+.url-cell,
+.url-text {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+/* History table */
+.history-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+    .history-table th,
+    .history-table td {
+        vertical-align: middle;
+        font-size: 14px;
+    }
+
+    .history-table .url-col {
+        width: 42%;
+    }
+
+    .history-table .url-cell {
+        max-width: 420px;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        line-height: 1.4;
+    }
+
+    .history-table .scanned-col {
+        width: 150px;
+        white-space: nowrap;
+    }
+
+    .history-table .action-col {
+        width: 90px;
+    }
+
+/* Small screens */
+@media (max-width: 768px) {
+    .container {
+        max-width: 100%;
+    }
+
+    .history-table {
+        min-width: 900px;
+    }
+
+        .history-table .url-col {
+            width: 350px;
+        }
+
+    .footer {
+        white-space: normal;
+        line-height: 24px;
+        padding: 16px 0;
+        text-align: center;
+    }
+}
+
+/* Validation */
+.field-validation-error {
+    font-size: 14px;
+}
+
+.validation-summary-errors ul {
+    margin-bottom: 0;
 }

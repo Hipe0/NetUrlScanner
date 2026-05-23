@@ -1,0 +1,123 @@
+﻿@model List<NetURLScanner.Models.TrustedBrand>
+
+@{
+    ViewData["Title"] = "URL uy tín";
+}
+
+<div class="container mt-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <div>
+            <h2 class="fw-bold">Danh sách URL uy tín</h2>
+            <p class="text-muted mb-0">
+                Quản lý các domain chính thức dùng để đối chiếu khi phát hiện URL giả mạo thương hiệu.
+            </p>
+        </div>
+
+        <a asp-action="Create" class="btn btn-primary mt-3 mt-md-0">
+            Thêm URL uy tín
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Thương hiệu</th>
+                        <th>Domain chính thức</th>
+                        <th>Lĩnh vực</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày thêm</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                Chưa có domain uy tín nào được thêm từ trang quản trị.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="fw-semibold">
+                                    @item.BrandName
+                                </td>
+
+                                <td>
+                                    <code>@item.OfficialDomain</code>
+                                </td>
+
+                                <td>
+                                    @item.Category
+                                </td>
+
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @item.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+
+                                <td class="text-center">
+                                    <form asp-action="ToggleStatus"
+                                          asp-route-id="@item.Id"
+                                          method="post"
+                                          class="d-inline">
+                                        @Html.AntiForgeryToken()
+
+                                        @if (item.IsActive)
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-warning">
+                                                Tắt
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                                Bật
+                                            </button>
+                                        }
+                                    </form>
+
+                                    <form asp-action="Delete"
+                                          asp-route-id="@item.Id"
+                                          method="post"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Bạn có chắc muốn xóa domain này?');">
+                                        @Html.AntiForgeryToken()
+
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            Xóa
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
