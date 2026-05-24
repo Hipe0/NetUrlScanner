@@ -1,0 +1,146 @@
+﻿@model List<NetURLScanner.Models.BlacklistedDomain>
+
+@{
+    ViewData["Title"] = "Blacklist Domains";
+}
+
+<div class="container mt-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <div>
+            <h2 class="fw-bold">Blacklist Domains</h2>
+            <p class="text-muted mb-0">
+                Quản lý các domain nguy hiểm. Nếu URL thuộc domain trong blacklist, hệ thống sẽ đánh giá ở mức Suspicious.
+            </p>
+        </div>
+
+        <a asp-action="Create" class="btn btn-danger mt-3 mt-md-0">
+            Thêm domain nguy hiểm
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 trusted-brand-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>Domain</th>
+                        <th>Loại rủi ro</th>
+                        <th>Mức độ</th>
+                        <th>Lý do</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày thêm</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                Chưa có domain nào trong blacklist.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            string severityClass = item.Severity switch
+                            {
+                                "High" => "bg-danger",
+                                "Medium" => "bg-warning text-dark",
+                                "Low" => "bg-secondary",
+                                _ => "bg-secondary"
+                            };
+
+                            <tr>
+                                <td>
+                                    <code>@item.Domain</code>
+                                </td>
+
+                                <td>
+                                    @item.Category
+                                </td>
+
+                                <td>
+                                    <span class="badge @severityClass">
+                                        @item.Severity
+                                    </span>
+                                </td>
+
+                                <td style="max-width: 360px; word-break: break-word;">
+                                    @item.Reason
+                                </td>
+
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @item.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-1 flex-wrap">
+                                        <a asp-action="Edit"
+                                           asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-outline-primary">
+                                            Sửa
+                                        </a>
+
+                                        <form asp-action="ToggleStatus"
+                                              asp-route-id="@item.Id"
+                                              method="post"
+                                              class="d-inline">
+                                            @Html.AntiForgeryToken()
+
+                                            @if (item.IsActive)
+                                            {
+                                                <button type="submit" class="btn btn-sm btn-outline-warning">
+                                                    Tắt
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                                    Bật
+                                                </button>
+                                            }
+                                        </form>
+
+                                        <form asp-action="Delete"
+                                              asp-route-id="@item.Id"
+                                              method="post"
+                                              class="d-inline"
+                                              onsubmit="return confirm('Bạn có chắc muốn xóa domain này khỏi blacklist?');">
+                                            @Html.AntiForgeryToken()
+
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                Xóa
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

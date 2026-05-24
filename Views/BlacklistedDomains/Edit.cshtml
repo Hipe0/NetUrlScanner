@@ -1,0 +1,119 @@
+﻿@model NetURLScanner.Models.BlacklistedDomain
+
+@{
+    ViewData["Title"] = "Sửa domain nguy hiểm";
+    var categories = ViewBag.Categories as List<string> ?? new List<string>();
+    var severities = ViewBag.Severities as List<string> ?? new List<string>();
+}
+
+<div class="container mt-4">
+    <div class="mb-4">
+        <h2 class="fw-bold">Sửa domain nguy hiểm</h2>
+        <p class="text-muted mb-0">
+            Cập nhật domain, loại rủi ro, mức độ, lý do và trạng thái blacklist.
+        </p>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="CreatedAt" />
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Domain" class="form-label fw-semibold">
+                        Domain nguy hiểm
+                    </label>
+
+                    <input asp-for="Domain"
+                           class="form-control"
+                           placeholder="Ví dụ: tichphan.vip, casino-online.xyz" />
+
+                    <span asp-validation-for="Domain" class="text-danger"></span>
+
+                    <div class="form-text">
+                        Chỉ nhập domain chính. Không nhập <code>https://</code>, không nhập <code>/login</code>,
+                        không nhập query string như <code>?id=123</code>.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Category" class="form-label fw-semibold">
+                        Loại rủi ro
+                    </label>
+
+                    <select asp-for="Category" class="form-select">
+                        <option value="">-- Chọn loại rủi ro --</option>
+
+                        @foreach (var category in categories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </select>
+
+                    <span asp-validation-for="Category" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Severity" class="form-label fw-semibold">
+                        Mức độ
+                    </label>
+
+                    <select asp-for="Severity" class="form-select">
+                        @foreach (var severity in severities)
+                        {
+                            <option value="@severity">@severity</option>
+                        }
+                    </select>
+
+                    <span asp-validation-for="Severity" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Reason" class="form-label fw-semibold">
+                        Lý do đưa vào blacklist
+                    </label>
+
+                    <textarea asp-for="Reason"
+                              class="form-control"
+                              rows="4"
+                              placeholder="Ví dụ: Domain giả mạo Vietcombank trong đường dẫn, có nguy cơ lừa đảo tài chính."></textarea>
+
+                    <span asp-validation-for="Reason" class="text-danger"></span>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input asp-for="IsActive" class="form-check-input" type="checkbox" role="switch" />
+                    <label asp-for="IsActive" class="form-check-label">
+                        Đang kích hoạt blacklist cho domain này
+                    </label>
+                </div>
+
+                <div class="alert alert-warning">
+                    <strong>Lưu ý:</strong>
+                    Không thể cập nhật domain thành domain đang nằm trong danh sách URL uy tín.
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        Lưu thay đổi
+                    </button>
+
+                    <a asp-action="Index" class="btn btn-secondary">
+                        Quay lại
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

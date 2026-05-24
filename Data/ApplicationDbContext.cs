@@ -14,6 +14,8 @@ namespace NetURLScanner.Data
 
         public DbSet<TrustedBrand> TrustedBrands { get; set; }
 
+        public DbSet<BlacklistedDomain> BlacklistedDomains { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

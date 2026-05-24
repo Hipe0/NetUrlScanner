@@ -137,6 +137,25 @@ namespace NetURLScanner.Services
             return trustedBrands;
         }
 
+        private async Task<(bool IsBlacklisted, string Category, string Severity, string Reason)> CheckBlacklist(string host)
+        {
+            var blacklistedDomains = await _context.BlacklistedDomains
+                .Where(x => x.IsActive)
+                .ToListAsync();
+
+            foreach (var item in blacklistedDomains)
+            {
+                string domain = item.Domain.Trim().ToLower();
+
+                if (host == domain || host.EndsWith("." + domain))
+                {
+                    return (true, item.Category, item.Severity, item.Reason);
+                }
+            }
+
+            return (false, "", "", "");
+        }
+
         private string NormalizeUrl(string url)
         {
             url = url.Trim();
@@ -174,6 +193,26 @@ namespace NetURLScanner.Services
             string host = uri?.Host.ToLower() ?? lowerUrl;
             string path = uri?.AbsolutePath.ToLower() ?? "";
             string query = uri?.Query.ToLower() ?? "";
+
+            var blacklistResult = CheckBlacklist(host).Result;
+
+            if (blacklistResult.IsBlacklisted)
+            {
+                return new RiskResult
+                {
+                    Score = 100,
+                    Level = "Suspicious",
+                    Reasons = new List<string>
+                    {
+                        $"Domain {host} nằm trong blacklist của hệ thống.",
+                        $"Loại rủi ro: {blacklistResult.Category}.",
+                        $"Mức độ: {blacklistResult.Severity}.",
+                        $"Lý do: {blacklistResult.Reason}"
+                    }
+                };
+            }
+
+
 
             bool isOfficialTrustedDomain = trustedBrands.Values.Any(domain =>
                 host == domain || host.EndsWith("." + domain));

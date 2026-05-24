@@ -1,0 +1,142 @@
+﻿@model NetURLScanner.Models.BlacklistedDomain
+
+@{
+    ViewData["Title"] = "Thêm domain nguy hiểm";
+    var categories = ViewBag.Categories as List<string> ?? new List<string>();
+    var severities = ViewBag.Severities as List<string> ?? new List<string>();
+}
+
+<div class="container mt-4">
+    <div class="mb-4">
+        <h2 class="fw-bold">Thêm domain nguy hiểm</h2>
+        <p class="text-muted mb-0">
+            Thêm domain vào blacklist để hệ thống cảnh báo mạnh khi người dùng quét URL thuộc domain này.
+        </p>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="alert alert-danger mb-4">
+                <strong>Lưu ý:</strong>
+                Domain trong blacklist sẽ được hệ thống đánh giá ở mức <strong>Suspicious</strong>.
+                Không thể thêm domain đang nằm trong danh sách URL uy tín vào blacklist.
+            </div>
+
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Domain" class="form-label fw-semibold">
+                        Domain nguy hiểm
+                    </label>
+
+                    <input asp-for="Domain"
+                           class="form-control"
+                           placeholder="Ví dụ: tichphan.vip, casino-online.xyz, fake-bank-login.top" />
+
+                    <span asp-validation-for="Domain" class="text-danger"></span>
+
+                    <div class="form-text">
+                        Chỉ nhập domain chính. Không nhập <code>https://</code>, không nhập <code>/login</code>,
+                        không nhập query string như <code>?id=123</code>.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Category" class="form-label fw-semibold">
+                        Loại rủi ro
+                    </label>
+
+                    <select asp-for="Category" class="form-select">
+                        <option value="">-- Chọn loại rủi ro --</option>
+
+                        @foreach (var category in categories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </select>
+
+                    <span asp-validation-for="Category" class="text-danger"></span>
+
+                    <div class="form-text">
+                        Ví dụ: Phishing, Gambling, Scam, Malware, Fake Brand, Financial Fraud.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Severity" class="form-label fw-semibold">
+                        Mức độ rủi ro
+                    </label>
+
+                    <select asp-for="Severity" class="form-select">
+                        <option value="">-- Chọn mức độ --</option>
+
+                        @foreach (var severity in severities)
+                        {
+                            if (severity == "High")
+                            {
+                                <option value="@severity" selected>@severity</option>
+                            }
+                            else
+                            {
+                                <option value="@severity">@severity</option>
+                            }
+                        }
+                    </select>
+
+                    <span asp-validation-for="Severity" class="text-danger"></span>
+
+                    <div class="form-text">
+                        Nên chọn <strong>High</strong> cho domain giả mạo, lừa đảo, cá cược/cờ bạc hoặc có nguy cơ mất tài sản.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Reason" class="form-label fw-semibold">
+                        Lý do đưa vào blacklist
+                    </label>
+
+                    <textarea asp-for="Reason"
+                              class="form-control"
+                              rows="4"
+                              placeholder="Ví dụ: Domain giả mạo Vietcombank trong đường dẫn, có nguy cơ lừa đảo tài chính."></textarea>
+
+                    <span asp-validation-for="Reason" class="text-danger"></span>
+
+                    <div class="form-text">
+                        Lý do này sẽ được hiển thị trong phần chi tiết khi URL bị phát hiện thuộc blacklist.
+                    </div>
+                </div>
+
+                <div class="alert alert-secondary">
+                    <strong>Ví dụ hợp lệ:</strong>
+                    <code>tichphan.vip</code>,
+                    <code>casino-online.xyz</code>,
+                    <code>fake-vietcombank-login.top</code>
+                    <br />
+                    <strong>Ví dụ không hợp lệ:</strong>
+                    <code>https://tichphan.vip/login</code>,
+                    <code>tichphan.vip/login?id=123</code>
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="submit" class="btn btn-danger">
+                        Lưu vào blacklist
+                    </button>
+
+                    <a asp-action="Index" class="btn btn-secondary">
+                        Quay lại
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
