@@ -16,11 +16,72 @@
         </a>
     </div>
 
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 h-100 bg-body-tertiary">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Bộ lọc & Tìm kiếm</h5>
+                    <form asp-action="History" method="get" class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tìm kiếm URL</label>
+                            <input type="text" name="search" class="form-control" placeholder="Nhập domain hoặc từ khóa..." value="@ViewBag.Search" />
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Trạng thái kết nối</label>
+                            <select name="status" class="form-select">
+                                <option value="">-- Tất cả trạng thái --</option>
+                                @if (ViewBag.Status == "Online") { <option value="Online" selected>Online</option> } else { <option value="Online">Online</option> }
+                                @if (ViewBag.Status == "Redirect") { <option value="Redirect" selected>Redirect</option> } else { <option value="Redirect">Redirect</option> }
+                                @if (ViewBag.Status == "Client Error") { <option value="Client Error" selected>Client Error</option> } else { <option value="Client Error">Client Error</option> }
+                                @if (ViewBag.Status == "Server Error") { <option value="Server Error" selected>Server Error</option> } else { <option value="Server Error">Server Error</option> }
+                                @if (ViewBag.Status == "Offline") { <option value="Offline" selected>Offline</option> } else { <option value="Offline">Offline</option> }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Mức rủi ro</label>
+                            <select name="riskLevel" class="form-select">
+                                <option value="">-- Tất cả --</option>
+                                @if (ViewBag.RiskLevel == "Safe") { <option value="Safe" selected>Safe</option> } else { <option value="Safe">Safe</option> }
+                                @if (ViewBag.RiskLevel == "Warning") { <option value="Warning" selected>Warning</option> } else { <option value="Warning">Warning</option> }
+                                @if (ViewBag.RiskLevel == "Suspicious") { <option value="Suspicious" selected>Suspicious</option> } else { <option value="Suspicious">Suspicious</option> }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                Lọc kết quả
+                            </button>
+                            @if (!string.IsNullOrEmpty(ViewBag.Search) || !string.IsNullOrEmpty(ViewBag.Status) || !string.IsNullOrEmpty(ViewBag.RiskLevel))
+                            {
+                                <a asp-action="History" class="btn btn-outline-secondary ms-2">Xóa</a>
+                            }
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mt-3 mt-lg-0">
+            <div class="card shadow-sm border-0 h-100 bg-body-tertiary">
+                <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                    <h5 class="fw-bold mb-2">Thống kê rủi ro</h5>
+                    <div style="height: 180px; width: 100%; position: relative;">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover table-bordered align-middle mb-0 history-table">
-                    <thead class="table-light text-center">
+                    <thead class="text-center">
                         <tr>
                             <th class="url-col text-start">URL</th>
                             <th>Status</th>
@@ -99,7 +160,80 @@
             </div>
         </div>
     </div>
+
+    @if (ViewBag.TotalPages > 1)
+    {
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(ViewBag.CurrentPage <= 1 ? "disabled" : "")">
+                    <a class="page-link" href="?search=@ViewBag.Search&status=@ViewBag.Status&riskLevel=@ViewBag.RiskLevel&page=@(ViewBag.CurrentPage - 1)">Trước</a>
+                </li>
+                
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                        <a class="page-link" href="?search=@ViewBag.Search&status=@ViewBag.Status&riskLevel=@ViewBag.RiskLevel&page=@i">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(ViewBag.CurrentPage >= ViewBag.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="?search=@ViewBag.Search&status=@ViewBag.Status&riskLevel=@ViewBag.RiskLevel&page=@(ViewBag.CurrentPage + 1)">Sau</a>
+                </li>
+            </ul>
+        </nav>
+    }
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var ctx = document.getElementById('riskChart').getContext('2d');
+            
+            var safeCount = @(ViewBag.SafeCount ?? 0);
+            var warningCount = @(ViewBag.WarningCount ?? 0);
+            var suspiciousCount = @(ViewBag.SuspiciousCount ?? 0);
+            
+            if (safeCount === 0 && warningCount === 0 && suspiciousCount === 0) {
+                // Hiển thị biểu đồ trống nếu không có dữ liệu
+                safeCount = 1;
+            }
+
+            var riskChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Safe', 'Warning', 'Suspicious'],
+                    datasets: [{
+                        data: [safeCount, warningCount, suspiciousCount],
+                        backgroundColor: [
+                            '#198754', // Bootstrap success
+                            '#ffc107', // Bootstrap warning
+                            '#dc3545'  // Bootstrap danger
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}
 
 <style>
     .history-table {

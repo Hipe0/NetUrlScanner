@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
 using NetURLScanner.Services;
@@ -60,11 +60,50 @@ namespace NetURLScanner.Controllers
             return View(scan);
         }
 
-        public async Task<IActionResult> History()
+        public async Task<IActionResult> History(string search, string status, string riskLevel, int page = 1)
         {
-            var scans = await _context.UrlScans
+            var query = _context.UrlScans.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(x => x.Url.Contains(search));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = query.Where(x => x.Status == status);
+            }
+
+            if (!string.IsNullOrWhiteSpace(riskLevel))
+            {
+                query = query.Where(x => x.RiskLevel == riskLevel);
+            }
+
+            // Dữ liệu biểu đồ thống kê
+            ViewBag.SafeCount = await query.CountAsync(x => x.RiskLevel == "Safe");
+            ViewBag.WarningCount = await query.CountAsync(x => x.RiskLevel == "Warning");
+            ViewBag.SuspiciousCount = await query.CountAsync(x => x.RiskLevel == "Suspicious");
+
+            // Phân trang
+            int pageSize = 10;
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            if (page < 1) page = 1;
+            if (page > totalPages && totalPages > 0) page = totalPages;
+
+            var scans = await query
                 .OrderByDescending(x => x.ScannedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            ViewBag.Search = search;
+            ViewBag.Status = status;
+            ViewBag.RiskLevel = riskLevel;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalItems = totalItems;
 
             return View(scans);
         }
