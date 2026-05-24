@@ -1,0 +1,353 @@
+﻿@{
+    ViewData["Title"] = "NetURLScanner";
+}
+
+<div class="landing-fullscreen">
+    <canvas id="particleCanvas"></canvas>
+
+    <section class="landing-hero">
+        <div class="landing-logo">
+            <div class="logo-mark">N</div>
+            <span>NetURLScanner</span>
+        </div>
+
+        <h1>
+            Quét URL thông minh<br />
+            phát hiện rủi ro trước khi truy cập
+        </h1>
+
+        <p>
+            Kiểm tra trạng thái hoạt động, HTTPS, HTTP status, thời gian phản hồi,
+            Whitelist, Blacklist và các dấu hiệu giả mạo thương hiệu.
+        </p>
+
+        <div class="landing-actions">
+            <a asp-controller="UrlScanner" asp-action="Index" class="btn landing-primary-btn">
+                Bắt đầu quét URL
+            </a>
+
+            <a asp-controller="Home" asp-action="Privacy" class="btn landing-secondary-btn">
+                Xem cách hệ thống hoạt động
+            </a>
+        </div>
+
+        <div class="landing-stats">
+            <div>
+                <strong>Whitelist</strong>
+                <span>Đối chiếu domain uy tín</span>
+            </div>
+
+            <div>
+                <strong>Blacklist</strong>
+                <span>Cảnh báo domain nguy hiểm</span>
+            </div>
+
+            <div>
+                <strong>Risk Score</strong>
+                <span>Chấm điểm rủi ro URL</span>
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+    .container:has(.landing-fullscreen) {
+        max-width: 100%;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    main:has(.landing-fullscreen) {
+        padding-bottom: 0 !important;
+    }
+
+    .landing-fullscreen {
+        position: relative;
+        width: 100vw;
+        min-height: calc(100vh - 78px);
+        margin-left: calc(50% - 50vw);
+        overflow: hidden;
+        background: radial-gradient(circle at 15% 20%, rgba(13, 110, 253, 0.18), transparent 28%), radial-gradient(circle at 85% 25%, rgba(220, 53, 69, 0.13), transparent 28%), radial-gradient(circle at 45% 90%, rgba(255, 193, 7, 0.12), transparent 30%), linear-gradient(135deg, rgba(13, 110, 253, 0.04), rgba(32, 201, 151, 0.04)), var(--bs-body-bg);
+    }
+
+    #particleCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    .landing-hero {
+        position: relative;
+        z-index: 2;
+        min-height: calc(100vh - 78px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 64px 24px 56px;
+    }
+
+    .landing-logo {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 22px;
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--bs-body-color);
+        animation: fadeUp 0.8s ease both;
+    }
+
+    .logo-mark {
+        width: 40px;
+        height: 40px;
+        border-radius: 13px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-weight: 900;
+        background: linear-gradient(135deg, #0d6efd, #20c997, #ffc107, #dc3545);
+        box-shadow: 0 12px 32px rgba(13, 110, 253, 0.28);
+    }
+
+    .landing-hero h1 {
+        max-width: 980px;
+        font-size: clamp(38px, 5.2vw, 72px);
+        line-height: 1.08;
+        letter-spacing: -2.8px;
+        font-weight: 900;
+        margin-bottom: 24px;
+        color: var(--bs-body-color);
+        animation: fadeUp 0.9s ease 0.1s both;
+    }
+
+    .landing-hero p {
+        max-width: 760px;
+        font-size: clamp(16px, 1.4vw, 19px);
+        line-height: 1.7;
+        color: var(--bs-secondary-color);
+        margin-bottom: 34px;
+        animation: fadeUp 0.9s ease 0.2s both;
+    }
+
+    .landing-actions {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 40px;
+        animation: fadeUp 0.9s ease 0.3s both;
+    }
+
+    .landing-primary-btn,
+    .landing-secondary-btn {
+        border-radius: 999px;
+        padding: 12px 28px;
+        font-weight: 700;
+        font-size: 16px;
+        min-width: 190px;
+        border: 1px solid var(--bs-border-color);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
+    }
+
+    .landing-primary-btn {
+        background-color: var(--bs-body-color);
+        color: var(--bs-body-bg);
+    }
+
+        .landing-primary-btn:hover {
+            background-color: var(--bs-primary);
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+    .landing-secondary-btn {
+        color: var(--bs-body-color);
+        background-color: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+    }
+
+    [data-bs-theme="dark"] .landing-secondary-btn {
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .landing-secondary-btn:hover {
+        color: var(--bs-primary);
+        text-decoration: none;
+    }
+
+    .landing-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(170px, 1fr));
+        gap: 16px;
+        width: min(820px, calc(100% - 32px));
+        animation: fadeUp 0.9s ease 0.4s both;
+    }
+
+        .landing-stats div {
+            padding: 20px;
+            border-radius: 18px;
+            background-color: rgba(255, 255, 255, 0.68);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        }
+
+    [data-bs-theme="dark"] .landing-stats div {
+        background-color: rgba(37, 43, 49, 0.76);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .landing-stats strong {
+        display: block;
+        font-size: 18px;
+        margin-bottom: 6px;
+        color: var(--bs-body-color);
+    }
+
+    .landing-stats span {
+        color: var(--bs-secondary-color);
+        font-size: 14px;
+    }
+
+    @@keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(22px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .landing-hero {
+            padding-top: 48px;
+            justify-content: flex-start;
+        }
+
+            .landing-hero h1 {
+                font-size: clamp(36px, 10vw, 52px);
+                letter-spacing: -1.6px;
+            }
+
+        .landing-stats {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const canvas = document.getElementById("particleCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let width;
+        let height;
+        let particles = [];
+
+        const colors = [
+            "#0d6efd",
+            "#dc3545",
+            "#ffc107",
+            "#20c997",
+            "#6f42c1",
+            "#fd7e14"
+        ];
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+
+            width = rect.width;
+            height = rect.height;
+
+            canvas.width = width * window.devicePixelRatio;
+            canvas.height = height * window.devicePixelRatio;
+            canvas.style.width = width + "px";
+            canvas.style.height = height + "px";
+
+            ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+        }
+
+        function createParticles() {
+            particles = [];
+
+            const count = Math.min(150, Math.floor(width / 9));
+
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 3 + 1,
+                    speedX: (Math.random() - 0.5) * 0.45,
+                    speedY: Math.random() * 0.65 + 0.15,
+                    rotation: Math.random() * Math.PI,
+                    rotationSpeed: (Math.random() - 0.5) * 0.035,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    alpha: Math.random() * 0.72 + 0.22
+                });
+            }
+        }
+
+        function drawParticle(p) {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation);
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = p.color;
+
+            if (ctx.roundRect) {
+                ctx.beginPath();
+                ctx.roundRect(-p.size / 2, -p.size * 2, p.size, p.size * 4, 2);
+                ctx.fill();
+            } else {
+                ctx.fillRect(-p.size / 2, -p.size * 2, p.size, p.size * 4);
+            }
+
+            ctx.restore();
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            particles.forEach(p => {
+                p.x += p.speedX;
+                p.y += p.speedY;
+                p.rotation += p.rotationSpeed;
+
+                if (p.y > height + 20) {
+                    p.y = -20;
+                    p.x = Math.random() * width;
+                }
+
+                if (p.x < -20) {
+                    p.x = width + 20;
+                }
+
+                if (p.x > width + 20) {
+                    p.x = -20;
+                }
+
+                drawParticle(p);
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        resizeCanvas();
+        createParticles();
+        animate();
+
+        window.addEventListener("resize", function () {
+            resizeCanvas();
+            createParticles();
+        });
+    });
+</script>

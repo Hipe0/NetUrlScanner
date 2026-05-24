@@ -13,6 +13,11 @@ namespace NetUrlScanner.Controllers
             _logger = logger;
         }
 
+        public IActionResult Landing()
+        {
+            return View();
+        }
+
         public IActionResult Index()
         {
             return View();
