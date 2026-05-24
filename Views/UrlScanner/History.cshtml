@@ -1,4 +1,4 @@
-﻿@model List<NetURLScanner.Models.UrlScan>
+@model List<NetURLScanner.Models.UrlScan>
 
 @{
     ViewData["Title"] = "Lịch sử quét URL";
@@ -104,6 +104,7 @@
 <style>
     .history-table {
         width: 100%;
+        min-width: 1200px;
         table-layout: fixed;
     }
 
@@ -111,61 +112,52 @@
     .history-table td {
         vertical-align: middle;
         font-size: 14px;
+        white-space: nowrap;
     }
 
     .url-col {
-        width: 42%;
+        width: 300px;
     }
 
     .url-cell {
-        max-width: 420px;
-        white-space: normal;
+        white-space: normal !important;
         word-break: break-word;
         overflow-wrap: anywhere;
         line-height: 1.4;
     }
 
-    .scanned-col {
-        width: 150px;
-        white-space: nowrap;
-    }
-
-    .action-col {
-        width: 90px;
-    }
-
     .history-table th:nth-child(2),
     .history-table td:nth-child(2) {
-        width: 95px;
+        width: 100px; /* Status */
     }
 
     .history-table th:nth-child(3),
     .history-table td:nth-child(3) {
-        width: 90px;
+        width: 100px; /* HTTP Code */
     }
 
     .history-table th:nth-child(4),
     .history-table td:nth-child(4) {
-        width: 115px;
+        width: 130px; /* Response Time */
     }
 
     .history-table th:nth-child(5),
     .history-table td:nth-child(5) {
-        width: 110px;
+        width: 120px; /* Risk Level */
     }
 
     .history-table th:nth-child(6),
     .history-table td:nth-child(6) {
-        width: 90px;
+        width: 100px; /* Risk Score */
     }
 
-    @@media (max-width: 768px) {
-        .history-table {
-            min-width: 900px;
-        }
+    .history-table th:nth-child(7),
+    .history-table td:nth-child(7) {
+        width: 180px; /* Scanned At */
+    }
 
-        .url-col {
-            width: 350px;
-        }
+    .history-table th:nth-child(8),
+    .history-table td:nth-child(8) {
+        width: 100px; /* Action */
     }
 </style>
