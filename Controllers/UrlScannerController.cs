@@ -5,6 +5,7 @@ using NetURLScanner.Services;
 
 namespace NetURLScanner.Controllers
 {
+    [Route("Scan")]
     public class UrlScannerController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -18,9 +19,11 @@ namespace NetURLScanner.Controllers
             _scannerService = scannerService;
         }
 
+        [HttpGet("")]
         public async Task<IActionResult> Index()
         {
             var scans = await _context.UrlScans
+                .AsNoTracking()
                 .OrderByDescending(x => x.ScannedAt)
                 .Take(20)
                 .ToListAsync();
@@ -28,7 +31,7 @@ namespace NetURLScanner.Controllers
             return View(scans);
         }
 
-        [HttpPost]
+        [HttpPost("")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Scan(string url)
         {
@@ -48,6 +51,63 @@ namespace NetURLScanner.Controllers
             return RedirectToAction(nameof(Details), new { id = result.Id });
         }
 
+        [HttpPost("ScanAjax")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ScanAjax(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return Json(new { success = false, message = "Vui lòng nhập URL cần quét." });
+            }
+
+            try
+            {
+                var result = await _scannerService.ScanAsync(url);
+
+                _context.UrlScans.Add(result);
+                await _context.SaveChangesAsync();
+
+                var reasonsList = string.IsNullOrWhiteSpace(result.Reasons)
+                    ? new List<string>()
+                    : result.Reasons
+                        .Split(';', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => x.Trim())
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .ToList();
+
+                return Json(new
+                {
+                    success = true,
+                    data = new
+                    {
+                        id = result.Id,
+                        url = result.Url,
+                        status = result.Status,
+                        statusCode = result.StatusCode,
+                        responseTimeMs = result.ResponseTimeMs,
+                        isHttps = result.IsHttps,
+                        riskScore = result.RiskScore,
+                        riskLevel = result.RiskLevel,
+                        reasons = reasonsList,
+                        errorMessage = result.ErrorMessage,
+                        scannedAt = result.ScannedAt.ToString("dd/MM/yyyy HH:mm:ss"),
+                        ipAddress = result.IpAddress,
+                        countryName = result.CountryName,
+                        countryCode = result.CountryCode,
+                        city = result.City,
+                        isp = result.Isp,
+                        latitude = result.Latitude,
+                        longitude = result.Longitude
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Đã xảy ra lỗi trong quá trình quét: " + ex.Message });
+            }
+        }
+
+        [HttpGet("Details/{id}")]
         public async Task<IActionResult> Details(int id)
         {
             var scan = await _context.UrlScans.FindAsync(id);
@@ -60,9 +120,10 @@ namespace NetURLScanner.Controllers
             return View(scan);
         }
 
+        [HttpGet("~/History")]
         public async Task<IActionResult> History(string search, string status, string riskLevel, int page = 1)
         {
-            var query = _context.UrlScans.AsQueryable();
+            var query = _context.UrlScans.AsNoTracking().AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -108,7 +169,7 @@ namespace NetURLScanner.Controllers
             return View(scans);
         }
 
-        [HttpPost]
+        [HttpPost("Delete/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {

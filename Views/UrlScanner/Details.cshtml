@@ -1,4 +1,4 @@
-﻿@model NetURLScanner.Models.UrlScan
+@model NetURLScanner.Models.UrlScan
 
 @{
     ViewData["Title"] = "Chi tiết quét URL";
@@ -74,77 +74,180 @@
     }
 
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body">
-            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
-                <div>
-                    <p class="text-muted mb-1">URL đã quét</p>
-                    <h5 class="fw-bold mb-0" style="word-break: break-all;">
-                        @Model.Url
-                    </h5>
+        <div class="card-body p-4">
+            <div class="row g-4 align-items-center">
+                <!-- Cột trái: SVG Circular Gauge -->
+                <div class="col-md-4 text-center">
+                    <div class="gauge-wrapper">
+                        <svg viewBox="0 0 100 100" class="gauge-svg">
+                            <circle cx="50" cy="50" r="45" class="gauge-bg"></circle>
+                            <circle cx="50" cy="50" r="45" class="gauge-fill" id="detailsGaugeCircle"></circle>
+                        </svg>
+                        <div class="gauge-text">
+                            <span class="gauge-value text-body" id="detailsGaugeVal">0</span>
+                            <span class="gauge-percent">%</span>
+                            <div class="gauge-label" id="detailsGaugeLabel">Đang tính</div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="badge @badgeClass fs-6 px-3 py-2">
+                            @riskDisplayName
+                        </span>
+                    </div>
                 </div>
 
-                <div class="text-lg-end">
-                    <p class="text-muted mb-1">Mức rủi ro</p>
-                    <span class="badge @badgeClass fs-6 px-3 py-2">
-                        @riskDisplayName - @Model.RiskScore/100
-                    </span>
+                <!-- Cột phải: URL và chi tiết -->
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        <p class="text-muted mb-1">URL đã quét</p>
+                        <h5 class="fw-bold mb-0 text-primary" style="word-break: break-all;">
+                            @Model.Url
+                        </h5>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="border rounded p-3 bg-body-tertiary">
+                                <p class="text-muted mb-1 small">Trạng thái</p>
+                                <h6 class="mb-0 fw-bold @statusClass">@Model.Status</h6>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-lg-3">
+                            <div class="border rounded p-3 bg-body-tertiary">
+                                <p class="text-muted mb-1 small">HTTP Code</p>
+                                <h6 class="mb-0 fw-bold">@(Model.StatusCode?.ToString() ?? "-")</h6>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-lg-3">
+                            <div class="border rounded p-3 bg-body-tertiary">
+                                <p class="text-muted mb-1 small">Phản hồi</p>
+                                <h6 class="mb-0 fw-bold">@Model.ResponseTimeMs ms</h6>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-lg-3">
+                            <div class="border rounded p-3 bg-body-tertiary">
+                                <p class="text-muted mb-1 small">HTTPS</p>
+                                @if (Model.IsHttps)
+                                {
+                                    <h6 class="mb-0 fw-bold text-success">Có</h6>
+                                }
+                                else
+                                {
+                                    <h6 class="mb-0 fw-bold text-danger">Không</h6>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger mt-3 mb-0 py-2 small">
+                            <strong>Lỗi kết nối:</strong> @Model.ErrorMessage
+                        </div>
+                    }
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div class="progress mb-4" style="height: 20px;">
-                <div class="progress-bar @progressClass"
-                     role="progressbar"
-                     style="width: @progressValue%;"
-                     aria-valuenow="@progressValue"
-                     aria-valuemin="0"
-                     aria-valuemax="100">
-                    @progressValue%
+    <!-- Khung xem trước Website & Bản đồ máy chủ địa lý -->
+    <div class="row g-4 mb-4">
+        <!-- Cột trái: Ảnh chụp website (Browser Mockup) -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
+                    <h5 class="fw-bold mb-0 text-primary">Xem trước giao diện website</h5>
+                </div>
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="browser-mockup flex-grow-1 d-flex flex-column mb-0">
+                        <div class="browser-header">
+                            <div class="browser-dots">
+                                <span class="browser-dot red"></span>
+                                <span class="browser-dot yellow"></span>
+                                <span class="browser-dot green"></span>
+                            </div>
+                            <div class="browser-address">@Model.Url</div>
+                        </div>
+                        <div class="browser-body flex-grow-1" style="position: relative; min-height: 260px;">
+                            @if (Model.Status == "Offline")
+                            {
+                                <div class="browser-offline-placeholder">
+                                    <i class="bi bi-cloud-slash fs-1 mb-2"></i>
+                                    <span class="fw-bold">Website không phản hồi</span>
+                                    <span class="small text-muted">Không thể tạo ảnh chụp màn hình xem trước.</span>
+                                </div>
+                            }
+                            else
+                            {
+                                string cleanUrl = Model.Url.Replace("http://", "", StringComparison.OrdinalIgnoreCase)
+                                                           .Replace("https://", "", StringComparison.OrdinalIgnoreCase);
+                                string screenshotUrl = $"https://s0.wp.com/mshots/v1/{System.Net.WebUtility.UrlEncode(cleanUrl)}?w=1200";
+                                
+                                <img src="@screenshotUrl" alt="Live Preview" onerror="this.style.display='none'; document.getElementById('detailsScreenshotError').classList.remove('d-none');" />
+                                <div id="detailsScreenshotError" class="browser-offline-placeholder d-none">
+                                    <i class="bi bi-exclamation-triangle fs-1 mb-2 text-warning"></i>
+                                    <span class="fw-bold">Lỗi tải ảnh xem trước</span>
+                                    <span class="small text-muted">Không thể kết nối dịch vụ screenshot.</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <div class="border rounded p-3 h-100">
-                        <p class="text-muted mb-1">Trạng thái</p>
-                        <h6 class="mb-0 fw-bold @statusClass">@Model.Status</h6>
-                    </div>
+        <!-- Cột phải: Bản đồ máy chủ địa lý -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
+                    <h5 class="fw-bold mb-0 text-primary">Bản đồ vị trí máy chủ</h5>
                 </div>
-
-                <div class="col-md-3">
-                    <div class="border rounded p-3 h-100">
-                        <p class="text-muted mb-1">HTTP Code</p>
-                        <h6 class="mb-0 fw-bold">@(Model.StatusCode?.ToString() ?? "-")</h6>
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="p-3 border rounded-3 bg-body-tertiary mb-3 text-start">
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <span class="text-muted d-block small mb-1">
+                                    <i class="bi bi-hdd-network text-primary me-1"></i> Địa chỉ IP máy chủ:
+                                </span>
+                                <span class="fw-bold font-monospace">@(Model.IpAddress ?? "-")</span>
+                            </div>
+                            <div class="col-sm-6">
+                                <span class="text-muted d-block small mb-1">
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i> Vị trí địa lý:
+                                </span>
+                                <span class="fw-bold text-primary">
+                                    @if (!string.IsNullOrEmpty(Model.CountryCode) && Model.CountryCode != "-")
+                                    {
+                                        string flag = "";
+                                        try {
+                                            string code = Model.CountryCode.ToUpper();
+                                            int val1 = 127397 + code[0];
+                                            int val2 = 127397 + code[1];
+                                            flag = char.ConvertFromUtf32(val1) + char.ConvertFromUtf32(val2) + " ";
+                                        } catch {}
+                                        @flag
+                                    }
+                                    @Model.City, @Model.CountryName
+                                </span>
+                            </div>
+                            <div class="col-12 mt-2 pt-2 border-top">
+                                <span class="text-muted d-block small mb-1">
+                                    <i class="bi bi-broadcast text-success me-1"></i> Nhà mạng quản lý (ISP):
+                                </span>
+                                <span class="fw-bold">@(Model.Isp ?? "-")</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="col-md-3">
-                    <div class="border rounded p-3 h-100">
-                        <p class="text-muted mb-1">Response Time</p>
-                        <h6 class="mb-0 fw-bold">@Model.ResponseTimeMs ms</h6>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="border rounded p-3 h-100">
-                        <p class="text-muted mb-1">HTTPS</p>
-                        @if (Model.IsHttps)
-                        {
-                            <h6 class="mb-0 fw-bold text-success">Có</h6>
-                        }
-                        else
-                        {
-                            <h6 class="mb-0 fw-bold text-danger">Không</h6>
-                        }
+                    <!-- Bản đồ Leaflet -->
+                    <div class="leaflet-map-card flex-grow-1 d-flex">
+                        <div id="detailsMap" class="leaflet-map-div h-100 flex-grow-1" style="min-height: 260px;"></div>
                     </div>
                 </div>
             </div>
-
-            @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
-            {
-                <div class="alert alert-danger mt-3 mb-0">
-                    <strong>Lỗi:</strong> @Model.ErrorMessage
-                </div>
-            }
         </div>
     </div>
 
@@ -218,3 +321,115 @@
         </div>
     </div>
 </div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Hoạt ảnh Gauge rủi ro
+            const score = @Model.RiskScore;
+            const level = '@Model.RiskLevel';
+            
+            const circle = document.getElementById('detailsGaugeCircle');
+            const valText = document.getElementById('detailsGaugeVal');
+            const labelText = document.getElementById('detailsGaugeLabel');
+            if (circle && valText) {
+                circle.className = 'gauge-fill';
+                if (level === 'Safe') circle.classList.add('gauge-safe');
+                else if (level === 'Warning') circle.classList.add('gauge-warning');
+                else circle.classList.add('gauge-danger');
+
+                if (labelText) {
+                    labelText.textContent = level === 'Safe' ? 'An toàn' : 
+                                           level === 'Warning' ? 'Cảnh báo' : 'Nguy hiểm';
+                }
+
+                const r = 45;
+                const circumference = 2 * Math.PI * r;
+                
+                circle.style.strokeDasharray = circumference;
+                circle.style.strokeDashoffset = circumference;
+
+                setTimeout(() => {
+                    const offset = circumference - (score / 100) * circumference;
+                    circle.style.strokeDashoffset = offset;
+                }, 100);
+
+                let startTimestamp = null;
+                const duration = 1000;
+                
+                function step(timestamp) {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    const easeProgress = progress * (2 - progress);
+                    const currentVal = Math.round(easeProgress * score);
+                    valText.textContent = currentVal;
+                    
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                }
+                window.requestAnimationFrame(step);
+            }
+
+            // 2. Khởi tạo bản đồ máy chủ Leaflet
+            const lat = @(Model.Latitude?.ToString() ?? "null");
+            const lon = @(Model.Longitude?.ToString() ?? "null");
+            const ip = '@Html.Raw(Model.IpAddress)';
+            const country = '@Html.Raw(Model.CountryName)';
+
+            if (lat && lon) {
+                let detailsMapObj = null;
+
+                function initDetailsMap() {
+                    const mapContainer = document.getElementById('detailsMap');
+                    if (!mapContainer) return;
+
+                    if (detailsMapObj) {
+                        detailsMapObj.remove();
+                        detailsMapObj = null;
+                    }
+
+                    detailsMapObj = L.map('detailsMap').setView([lat, lon], 12);
+
+                    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+                    let tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+                    if (currentTheme === 'dark') {
+                        tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+                    }
+
+                    L.tileLayer(tileUrl, {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    }).addTo(detailsMapObj);
+
+                    L.marker([lat, lon]).addTo(detailsMapObj)
+                        .bindPopup(`<b>IP:</b> ${ip}<br><b>Quốc gia:</b> ${country}`)
+                        .openPopup();
+                }
+
+                // Khởi tạo
+                initDetailsMap();
+
+                // Lắng nghe nút đổi màu giao diện (Theme) để cập nhật màu bản đồ
+                document.getElementById('themeToggle')?.addEventListener('click', () => {
+                    setTimeout(initDetailsMap, 100);
+                });
+            } else {
+                // Ẩn khối bản đồ nếu không phân giải được vị trí
+                const mapWrapper = document.getElementById('detailsMap')?.closest('.col-lg-6');
+                if (mapWrapper) {
+                    mapWrapper.classList.add('d-none');
+                    // Mở rộng khung screenshot chiếm trọn chiều rộng nếu không có bản đồ
+                    const previewWrapper = document.querySelector('.browser-mockup')?.closest('.col-lg-6');
+                    if (previewWrapper) {
+                        previewWrapper.className = 'col-12';
+                    }
+                }
+            }
+        });
+    </script>
+}

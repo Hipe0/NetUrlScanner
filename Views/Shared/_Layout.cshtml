@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/NetUrlScanner.styles.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 
 <body>
@@ -119,6 +120,9 @@
         </main>
     </div>
 
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;"></div>
+
     <footer class="border-top footer text-muted">
         <div class="container">
             &copy; 2026 - NetURLScanner
@@ -128,6 +132,22 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- Script xử lý hiển thị TempData bằng Toast -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            @if (TempData["Success"] != null)
+            {
+                var successMsg = TempData["Success"]?.ToString() ?? string.Empty;
+                <text>window.showToast('@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(successMsg))', 'success');</text>
+            }
+            @if (TempData["Error"] != null)
+            {
+                var errorMsg = TempData["Error"]?.ToString() ?? string.Empty;
+                <text>window.showToast('@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(errorMsg))', 'danger');</text>
+            }
+        });
+    </script>
 
     <!-- Script xử lý sự kiện nút Dark Mode -->
     <script>

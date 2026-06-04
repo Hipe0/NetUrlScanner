@@ -1,5 +1,6 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Net;
+using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
 using NetURLScanner.Models;
@@ -25,6 +26,28 @@ namespace NetURLScanner.Services
                 ScannedAt = DateTime.Now,
                 IsHttps = url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
             };
+
+            Uri? uri = null;
+            try
+            {
+                uri = new Uri(url);
+                var geo = await GetGeolocationAsync(uri.Host);
+                result.IpAddress = geo.Ip;
+                result.CountryName = geo.Country;
+                result.CountryCode = geo.CountryCode;
+                result.City = geo.City;
+                result.Isp = geo.Isp;
+                result.Latitude = geo.Lat;
+                result.Longitude = geo.Lon;
+            }
+            catch
+            {
+                result.IpAddress = "-";
+                result.CountryName = "Unknown";
+                result.CountryCode = "-";
+                result.City = "Unknown";
+                result.Isp = "Unknown";
+            }
 
             var stopwatch = Stopwatch.StartNew();
 
@@ -619,5 +642,49 @@ namespace NetURLScanner.Services
 
             return dp[a.Length, b.Length];
         }
+
+        private async Task<(string Ip, string Country, string CountryCode, string City, string Isp, double? Lat, double? Lon)> GetGeolocationAsync(string host)
+        {
+            try
+            {
+                var addresses = await Dns.GetHostAddressesAsync(host);
+                var ipv4 = addresses.FirstOrDefault(x => x.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.ToString();
+                
+                if (string.IsNullOrEmpty(ipv4))
+                {
+                    return ("-", "Unknown", "-", "Unknown", "Unknown", null, null);
+                }
+
+                using var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(5);
+                var response = await client.GetAsync($"http://ip-api.com/json/{ipv4}");
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadFromJsonAsync<IpApiResponse>();
+                    if (json != null && json.status == "success")
+                    {
+                        return (ipv4, json.country, json.countryCode, json.city, json.isp, json.lat, json.lon);
+                    }
+                }
+
+                return (ipv4, "Unknown", "-", "Unknown", "Unknown", null, null);
+            }
+            catch
+            {
+                return ("-", "Unknown", "-", "Unknown", "Unknown", null, null);
+            }
+        }
+    }
+
+    public class IpApiResponse
+    {
+        public string status { get; set; } = string.Empty;
+        public string country { get; set; } = string.Empty;
+        public string countryCode { get; set; } = string.Empty;
+        public string city { get; set; } = string.Empty;
+        public string isp { get; set; } = string.Empty;
+        public double lat { get; set; }
+        public double lon { get; set; }
     }
 }

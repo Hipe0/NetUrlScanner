@@ -388,3 +388,241 @@ code {
         text-align: center;
     }
 }
+
+/* Custom Floating Toast Notifications */
+.toast-container {
+    pointer-events: none;
+}
+.toast-container .toast {
+    pointer-events: auto;
+    border-radius: 12px;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border-left: 5px solid;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+[data-bs-theme="dark"] .toast-container .toast {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    background-color: #2b3035;
+}
+.toast.toast-success {
+    border-left-color: #198754 !important;
+}
+.toast.toast-danger {
+    border-left-color: #dc3545 !important;
+}
+.toast.toast-warning {
+    border-left-color: #ffc107 !important;
+}
+.toast.toast-info {
+    border-left-color: #0dcaf0 !important;
+}
+.toast-body {
+    padding: 1rem;
+    font-weight: 500;
+}
+
+/* Multi-step loading styles */
+.loading-step {
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+}
+.loading-step.active {
+    color: var(--bs-primary) !important;
+    font-weight: 600;
+}
+.loading-step.completed {
+    color: var(--bs-success) !important;
+}
+.loading-step.failed {
+    color: var(--bs-danger) !important;
+}
+.loading-step i {
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+}
+.loading-step.active i {
+    animation: spin 1.2s infinite linear;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* SVG Circular Gauge */
+.gauge-wrapper {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    margin: 0 auto;
+}
+.gauge-svg {
+    transform: rotate(-90deg);
+    width: 100%;
+    height: 100%;
+}
+.gauge-bg {
+    fill: none;
+    stroke: var(--bs-secondary-bg);
+    stroke-width: 8;
+}
+.gauge-fill {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1), stroke 1s ease;
+    stroke-dasharray: 282.74; /* 2 * PI * r (r=45) */
+    stroke-dashoffset: 282.74;
+}
+.gauge-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+.gauge-value {
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1;
+    display: inline-block;
+}
+.gauge-percent {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--bs-secondary-color);
+}
+.gauge-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--bs-secondary-color);
+    margin-top: 2px;
+}
+/* Gauge status stroke colors */
+.gauge-fill.gauge-safe {
+    stroke: #198754;
+}
+.gauge-fill.gauge-warning {
+    stroke: #ffc107;
+}
+.gauge-fill.gauge-danger {
+    stroke: #dc3545;
+}
+
+/* CSS micro-animations for card entries */
+.slide-down-enter {
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slide-down-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+}
+.fade-in-row {
+    animation: highlightRow 1.5s ease-out;
+}
+@keyframes highlightRow {
+    0% { background-color: rgba(13, 110, 253, 0.15); }
+    100% { background-color: transparent; }
+}
+
+/* Browser Mockup CSS */
+.browser-mockup {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 12px;
+    background-color: var(--bs-tertiary-bg);
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+[data-bs-theme="dark"] .browser-mockup {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    background-color: #2b3035;
+}
+.browser-header {
+    height: 40px;
+    background-color: var(--bs-tertiary-bg);
+    border-bottom: 1px solid var(--bs-border-color);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+}
+.browser-dots {
+    display: flex;
+    gap: 6px;
+}
+.browser-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+.browser-dot.red { background-color: #dc3545; }
+.browser-dot.yellow { background-color: #ffc107; }
+.browser-dot.green { background-color: #198754; }
+
+.browser-address {
+    flex-grow: 1;
+    height: 24px;
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: var(--bs-secondary-color);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    font-family: monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.browser-body {
+    flex-grow: 1;
+    position: relative;
+    background-color: #fff;
+    min-height: 220px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.browser-body img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+.browser-offline-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
+    padding: 20px;
+    text-align: center;
+}
+
+/* Map Containers */
+.leaflet-map-card {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.leaflet-map-div {
+    height: 260px;
+    width: 100%;
+    z-index: 1; /* Keep leaflet controls below bootstrap dropdowns/modals */
+}
+/* Fix Leaflet dark mode border controls */
+.leaflet-bar a, .leaflet-control-zoom-in, .leaflet-control-zoom-out {
+    background-color: var(--bs-body-bg) !important;
+    color: var(--bs-body-color) !important;
+    border-color: var(--bs-border-color) !important;
+}

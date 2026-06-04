@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
 using NetURLScanner.Models;
@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace NetURLScanner.Controllers
 {
+    [Route("Whitelist")]
     public class TrustedBrandsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -16,22 +17,25 @@ namespace NetURLScanner.Controllers
             _context = context;
         }
 
+        [HttpGet("")]
         public async Task<IActionResult> Index()
         {
             var brands = await _context.TrustedBrands
+                .AsNoTracking()
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
 
             return View(brands);
         }
 
+        [HttpGet("Create")]
         public IActionResult Create()
         {
             LoadCategories();
             return View(new TrustedBrand());
         }
 
-        [HttpPost]
+        [HttpPost("Create")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(TrustedBrand model)
         {
@@ -102,7 +106,7 @@ namespace NetURLScanner.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpPost]
+        [HttpPost("ToggleStatus/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(int id)
         {
@@ -123,7 +127,7 @@ namespace NetURLScanner.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpPost]
+        [HttpPost("Delete/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {

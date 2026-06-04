@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace NetURLScanner.Models
 {
@@ -21,6 +21,14 @@ namespace NetURLScanner.Models
 
         public string Reasons { get; set; } = string.Empty;
         public string? ErrorMessage { get; set; }
+
+        public string? IpAddress { get; set; }
+        public string? CountryName { get; set; }
+        public string? CountryCode { get; set; }
+        public string? City { get; set; }
+        public string? Isp { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
 
         public DateTime ScannedAt { get; set; } = DateTime.Now;
     }

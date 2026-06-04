@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
 using NetURLScanner.Models;
@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace NetURLScanner.Controllers
 {
+    [Route("Blacklist")]
     public class BlacklistedDomainsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -16,22 +17,25 @@ namespace NetURLScanner.Controllers
             _context = context;
         }
 
+        [HttpGet("")]
         public async Task<IActionResult> Index()
         {
             var domains = await _context.BlacklistedDomains
+                .AsNoTracking()
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
 
             return View(domains);
         }
 
+        [HttpGet("Create")]
         public IActionResult Create()
         {
             LoadOptions();
             return View(new BlacklistedDomain());
         }
 
-        [HttpPost]
+        [HttpPost("Create")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(BlacklistedDomain model)
         {
@@ -87,6 +91,7 @@ namespace NetURLScanner.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet("Edit/{id}")]
         public async Task<IActionResult> Edit(int id)
         {
             var domain = await _context.BlacklistedDomains.FindAsync(id);
@@ -100,7 +105,7 @@ namespace NetURLScanner.Controllers
             return View(domain);
         }
 
-        [HttpPost]
+        [HttpPost("Edit/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, BlacklistedDomain model)
         {
@@ -167,7 +172,7 @@ namespace NetURLScanner.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpPost]
+        [HttpPost("ToggleStatus/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(int id)
         {
@@ -188,7 +193,7 @@ namespace NetURLScanner.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpPost]
+        [HttpPost("Delete/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
