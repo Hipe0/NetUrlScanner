@@ -59,7 +59,7 @@
 
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
-            <form id="scanForm" asp-action="Scan" method="post">
+            <form id="scanForm" onsubmit="return false;">
                 @Html.AntiForgeryToken()
 
                 <label class="form-label fw-semibold">Nhập URL cần quét</label>
@@ -67,11 +67,12 @@
                 <div class="input-group">
                     <input type="text"
                            name="url"
+                           id="urlInput"
                            class="form-control"
                            placeholder="Ví dụ: google.com, go0gle.com, https://github.com"
                            required />
 
-                    <button type="submit" id="scanButton" class="btn btn-primary px-4">
+                    <button type="button" id="scanButton" class="btn btn-primary px-4">
                         <span id="buttonSpinner" class="spinner-border spinner-border-sm d-none me-1" role="status" aria-hidden="true"></span>
                         <span id="buttonText">Scan</span>
                     </button>
@@ -177,7 +178,7 @@
                 </div>
 
                 <!-- Cột phải: Đánh giá & Ảnh chụp xem trước (Browser Mockup) -->
-                <div class="col-lg-6 text-center">
+                <div class="col-lg-6">
                     <div class="mb-3 text-start">
                         <h6 class="fw-bold mb-2">Đánh giá của hệ thống:</h6>
                         <ul id="ajaxReasonsList" class="list-group list-group-flush mb-0 border rounded-3 p-2 bg-body-tertiary" style="max-height: 120px; overflow-y: auto; font-size: 0.9rem;">
@@ -196,7 +197,7 @@
                             <div class="browser-address" id="ajaxBrowserAddress">https://...</div>
                         </div>
                         <div class="browser-body">
-                            <img id="ajaxScreenshotImg" src="" alt="Live Preview" class="d-none" />
+                            <img id="ajaxScreenshotImg" src="" alt="Live Preview" class="d-none" decoding="async" fetchpriority="high" />
                             <div id="ajaxScreenshotOffline" class="browser-offline-placeholder d-none">
                                 <i class="bi bi-cloud-slash fs-1 mb-2"></i>
                                 <span class="fw-bold">Website không phản hồi</span>
@@ -257,7 +258,7 @@
                         };
 
                         <tr>
-                            <td style="max-width: 520px; word-break: break-all;">
+                            <td class="text-break-all" style="max-width: 520px; word-break: break-all;">
                                 @item.Url
                             </td>
 
@@ -303,443 +304,15 @@
             </table>
         </div>
     </div>
+</div>
+
+@section Styles {
+    <link rel="preconnect" href="https://s0.wp.com" crossorigin />
+    <link rel="dns-prefetch" href="https://s0.wp.com" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+}
 
 @section Scripts {
-    <script>
-        let ajaxMapObj = null;
-        let scanData = null; // Lưu trữ dữ liệu quét gần nhất để vẽ lại bản đồ khi đổi theme
-
-        // Hàm vẽ bản đồ Leaflet
-        function initAjaxMap(lat, lon, ip, country) {
-            const mapContainer = document.getElementById('ajaxMap');
-            if (!mapContainer) return;
-            
-            // Nếu không có tọa độ địa lý, ẩn khối bản đồ
-            if (!lat || !lon) {
-                mapContainer.parentElement.classList.add('d-none');
-                return;
-            }
-            mapContainer.parentElement.classList.remove('d-none');
-
-            // Hủy đối tượng bản đồ cũ để tránh lỗi "Map container is already initialized"
-            if (ajaxMapObj) {
-                ajaxMapObj.remove();
-                ajaxMapObj = null;
-            }
-
-            // Khởi tạo bản đồ Leaflet
-            ajaxMapObj = L.map('ajaxMap').setView([lat, lon], 12);
-
-            // Đổi layer bản đồ nền tùy chế độ Dark/Light mode
-            const currentTheme = document.documentElement.getAttribute('data-bs-theme');
-            let tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-            if (currentTheme === 'dark') {
-                tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-            }
-
-            L.tileLayer(tileUrl, {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(ajaxMapObj);
-
-            // Tạo Marker
-            L.marker([lat, lon]).addTo(ajaxMapObj)
-                .bindPopup(`<b>IP:</b> ${ip}<br><b>Vị trí:</b> ${country}`)
-                .openPopup();
-        }
-
-        // Lắng nghe sự kiện đổi màu nền Night Mode để vẽ lại bản đồ
-        document.getElementById('themeToggle')?.addEventListener('click', () => {
-            setTimeout(() => {
-                if (ajaxMapObj && scanData && scanData.latitude && scanData.longitude) {
-                    initAjaxMap(scanData.latitude, scanData.longitude, scanData.ipAddress, scanData.countryName);
-                }
-            }, 100);
-        });
-
-        // Hàm tải ảnh xem trước website (Screenshot)
-        function loadScreenshot(url, status) {
-            const img = document.getElementById('ajaxScreenshotImg');
-            const offline = document.getElementById('ajaxScreenshotOffline');
-            const loading = document.getElementById('ajaxScreenshotLoading');
-            const browserAddress = document.getElementById('ajaxBrowserAddress');
-            
-            if (!img || !offline || !loading) return;
-
-            if (browserAddress) {
-                browserAddress.textContent = url;
-            }
-
-            loading.classList.remove('d-none');
-            img.classList.add('d-none');
-            offline.classList.add('d-none');
-
-            if (status === 'Offline') {
-                loading.classList.add('d-none');
-                offline.classList.remove('d-none');
-                return;
-            }
-
-            // WordPress screenshot API ( public & free )
-            // Loại bỏ giao thức http/https trước khi gửi sang API Mshots để tránh lỗi nhận diện
-            const cleanUrl = url.replace(/^(https?:\/\/)/i, '');
-            const screenshotUrl = `https://s0.wp.com/mshots/v1/${encodeURIComponent(cleanUrl)}?w=1200`;
-            
-            img.src = screenshotUrl;
-            
-            img.onload = () => {
-                loading.classList.add('d-none');
-                img.classList.remove('d-none');
-            };
-            
-            img.onerror = () => {
-                loading.classList.add('d-none');
-                offline.classList.remove('d-none');
-            };
-        }
-
-        document.getElementById("scanForm").addEventListener("submit", function (e) {
-            e.preventDefault();
-            
-            const btn = document.getElementById("scanButton");
-            if (btn.classList.contains("disabled")) {
-                return false;
-            }
-            
-            const spinner = document.getElementById("buttonSpinner");
-            const text = document.getElementById("buttonText");
-            const form = this;
-            const urlInput = form.querySelector('input[name="url"]');
-            const url = urlInput.value.trim();
-
-            if (!url) return;
-
-            // Hiển thị trạng thái đang xử lý nút bấm
-            btn.classList.add("disabled");
-            spinner.classList.remove("d-none");
-            text.innerText = "Đang quét...";
-
-            // Setup loading UI
-            const loadingSection = document.getElementById('loadingSection');
-            const ajaxResultCard = document.getElementById('ajaxResultCard');
-            const scanningUrlText = document.getElementById('scanningUrlText');
-
-            scanningUrlText.textContent = url;
-            loadingSection.classList.remove('d-none');
-            ajaxResultCard.classList.add('d-none');
-            ajaxResultCard.classList.remove('slide-down-enter-active');
-
-            // Reset loading steps UI
-            const steps = ['step-1', 'step-2', 'step-3', 'step-4', 'step-5'];
-            steps.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.className = id === 'step-5' ? 'loading-step mb-0 text-muted' : 'loading-step mb-3 text-muted';
-                    el.querySelector('i').className = 'bi bi-circle me-2';
-                }
-            });
-
-            let scanCompleted = false;
-            scanData = null; // reset data cũ
-            let stepTimers = [];
-
-            // Hàm chạy tuần tự các bước
-            function runStep(index) {
-                if (scanCompleted && scanData) {
-                    // Fast forward tất cả bước còn lại sang hoàn thành
-                    for (let i = index; i < steps.length; i++) {
-                        const stepEl = document.getElementById(steps[i]);
-                        if (stepEl) {
-                            stepEl.className = i === 4 ? 'loading-step mb-0 completed' : 'loading-step mb-3 completed';
-                            stepEl.querySelector('i').className = 'bi bi-check-circle-fill me-2';
-                        }
-                    }
-                    setTimeout(() => {
-                        loadingSection.classList.add('d-none');
-                        showResults(scanData);
-                    }, 300);
-                    return;
-                }
-
-                const currentId = steps[index];
-                const stepEl = document.getElementById(currentId);
-                if (stepEl) {
-                    stepEl.className = index === 4 ? 'loading-step mb-0 active' : 'loading-step mb-3 active';
-                    stepEl.querySelector('i').className = 'bi bi-arrow-repeat me-2';
-                }
-
-                if (index < steps.length - 1) {
-                    const timer = setTimeout(() => {
-                        if (stepEl) {
-                            stepEl.className = 'loading-step mb-3 completed';
-                            stepEl.querySelector('i').className = 'bi bi-check-circle-fill me-2';
-                        }
-                        runStep(index + 1);
-                    }, 350);
-                    stepTimers.push(timer);
-                } else {
-                    const timer = setTimeout(() => {
-                        if (stepEl) {
-                            stepEl.className = 'loading-step mb-0 completed';
-                            stepEl.querySelector('i').className = 'bi bi-check-circle-fill me-2';
-                        }
-                        if (scanCompleted && scanData) {
-                            setTimeout(() => {
-                                loadingSection.classList.add('d-none');
-                                showResults(scanData);
-                            }, 300);
-                        } else {
-                            scanCompleted = true; // steps completed, waiting for fetch
-                        }
-                    }, 350);
-                    stepTimers.push(timer);
-                }
-            }
-
-            // Bắt đầu chạy hiệu ứng loading
-            runStep(0);
-
-            // Gửi dữ liệu AJAX
-            const formData = new FormData(form);
-            fetch('/Scan/ScanAjax', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    if (scanCompleted) {
-                        loadingSection.classList.add('d-none');
-                        showResults(result.data);
-                    } else {
-                        scanCompleted = true;
-                        scanData = result.data;
-                    }
-                } else {
-                    clearTimers();
-                    loadingSection.classList.add('d-none');
-                    resetButtons();
-                    window.showToast(result.message || 'Đã xảy ra lỗi.', 'danger');
-                }
-            })
-            .catch(error => {
-                clearTimers();
-                loadingSection.classList.add('d-none');
-                resetButtons();
-                window.showToast('Lỗi mạng hoặc máy chủ không phản hồi.', 'danger');
-            });
-
-            function clearTimers() {
-                stepTimers.forEach(t => clearTimeout(t));
-                stepTimers = [];
-            }
-
-            function resetButtons() {
-                btn.classList.remove("disabled");
-                spinner.classList.add("d-none");
-                text.innerText = "Scan";
-            }
-
-            function showResults(data) {
-                resetButtons();
-                
-                // Clear input
-                urlInput.value = '';
-                
-                // 1. Show Toast
-                window.showToast('Phân tích URL hoàn tất!', 'success');
-
-                // 2. Set link xem chi tiết
-                document.getElementById('resultDetailLink').href = `/Scan/Details/${data.id}`;
-
-                // 3. Render Status
-                const statusText = document.getElementById('ajaxStatusText');
-                statusText.textContent = data.status;
-                statusText.className = 'fw-bold';
-                if (data.status === 'Online') statusText.classList.add('text-success');
-                else if (data.status === 'Redirect') statusText.classList.add('text-primary');
-                else if (data.status === 'Client Error') statusText.classList.add('text-warning');
-                else statusText.classList.add('text-danger');
-
-                document.getElementById('ajaxStatusCodeText').textContent = data.statusCode !== null ? data.statusCode : '-';
-                document.getElementById('ajaxResponseTimeText').textContent = `${data.responseTimeMs} ms`;
-                
-                const httpsText = document.getElementById('ajaxHttpsText');
-                httpsText.textContent = data.isHttps ? 'Có' : 'Không';
-                httpsText.className = data.isHttps ? 'badge bg-success' : 'badge bg-danger';
-
-                // Render IP & ISP
-                document.getElementById('ajaxIpText').textContent = data.ipAddress || '-';
-                document.getElementById('ajaxIspText').textContent = data.isp || '-';
-
-                // Render Location with Flag Emoji
-                const locationText = document.getElementById('ajaxLocationText');
-                if (data.countryName && data.countryName !== 'Unknown') {
-                    let flag = '';
-                    if (data.countryCode && data.countryCode.length === 2) {
-                        const codePoints = data.countryCode
-                            .toUpperCase()
-                            .split('')
-                            .map(char => 127397 + char.charCodeAt(0));
-                        flag = String.fromCodePoint(...codePoints) + ' ';
-                    }
-                    locationText.textContent = `${flag}${data.city}, ${data.countryName}`;
-                } else {
-                    locationText.textContent = 'Không xác định vị trí máy chủ';
-                }
-
-                // 4. Render Reasons
-                const reasonsList = document.getElementById('ajaxReasonsList');
-                reasonsList.innerHTML = '';
-                
-                if (data.reasons && data.reasons.length > 0) {
-                    data.reasons.forEach(reason => {
-                        const isDanger = reason.includes('cá cược') || reason.includes('cờ bạc') || reason.includes('mất tài sản') || reason.includes('lừa đảo');
-                        let icon = '<span class="badge bg-warning text-dark mt-1">!</span>';
-                        if (isDanger) {
-                            icon = '<span class="badge bg-danger mt-1">!</span>';
-                        } else if (data.riskLevel === 'Safe') {
-                            icon = '<span class="badge bg-success mt-1">✓</span>';
-                        }
-                        
-                        const li = document.createElement('li');
-                        li.className = 'list-group-item d-flex align-items-start gap-2 px-0 bg-transparent py-1 border-0';
-                        li.innerHTML = `${icon} <span class="text-body">${reason}</span>`;
-                        reasonsList.appendChild(li);
-                    });
-                } else {
-                    reasonsList.innerHTML = '<div class="text-muted text-center py-2">Không phát hiện dấu hiệu bất thường.</div>';
-                }
-
-                // 5. Render Badge
-                const riskBadge = document.getElementById('ajaxRiskBadge');
-                riskBadge.textContent = `${data.riskLevel} (${data.riskScore}/100)`;
-                riskBadge.className = 'badge px-3 py-2 fs-6';
-                if (data.riskLevel === 'Safe') riskBadge.classList.add('bg-success');
-                else if (data.riskLevel === 'Warning') riskBadge.classList.add('bg-warning', 'text-dark');
-                else riskBadge.classList.add('bg-danger');
-
-                // 6. Slide down result card
-                ajaxResultCard.classList.remove('d-none');
-                void ajaxResultCard.offsetWidth; // force reflow
-                ajaxResultCard.classList.add('slide-down-enter-active');
-
-                // 7. Animate Gauge
-                animateGauge(data.riskScore, data.riskLevel);
-
-                // 8. Load Screenshot
-                loadScreenshot(data.url, data.status);
-
-                // 9. Load Map
-                initAjaxMap(data.latitude, data.longitude, data.ipAddress, data.countryName);
-
-                // 10. Prepend Row to history table
-                prependToHistoryTable(data);
-            }
-
-            function animateGauge(score, level) {
-                const circle = document.getElementById('ajaxGaugeCircle');
-                const valText = document.getElementById('ajaxGaugeVal');
-                const labelText = document.getElementById('ajaxGaugeLabel');
-                if (!circle || !valText) return;
-
-                circle.className = 'gauge-fill';
-                if (level === 'Safe') circle.classList.add('gauge-safe');
-                else if (level === 'Warning') circle.classList.add('gauge-warning');
-                else circle.classList.add('gauge-danger');
-
-                if (labelText) {
-                    labelText.textContent = level === 'Safe' ? 'An toàn' : 
-                                           level === 'Warning' ? 'Cảnh báo' : 'Nguy hiểm';
-                }
-
-                const r = 45;
-                const circumference = 2 * Math.PI * r;
-                
-                circle.style.strokeDasharray = circumference;
-                circle.style.strokeDashoffset = circumference;
-
-                setTimeout(() => {
-                    const offset = circumference - (score / 100) * circumference;
-                    circle.style.strokeDashoffset = offset;
-                }, 50);
-
-                let startTimestamp = null;
-                const duration = 1000;
-                
-                function step(timestamp) {
-                    if (!startTimestamp) startTimestamp = timestamp;
-                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                    const easeProgress = progress * (2 - progress);
-                    const currentVal = Math.round(easeProgress * score);
-                    valText.textContent = currentVal;
-                    
-                    if (progress < 1) {
-                        window.requestAnimationFrame(step);
-                    }
-                }
-                window.requestAnimationFrame(step);
-            }
-
-            function prependToHistoryTable(data) {
-                const tbody = document.querySelector('table.table tbody');
-                if (!tbody) return;
-
-                const placeholderRow = tbody.querySelector('td[colspan]');
-                if (placeholderRow) {
-                    tbody.innerHTML = '';
-                }
-
-                const riskBadgeClass = data.riskLevel === 'Safe' ? 'bg-success' : 
-                                       data.riskLevel === 'Warning' ? 'bg-warning text-dark' : 'bg-danger';
-
-                let statusClass = 'text-muted';
-                if (data.status === 'Online') statusClass = 'text-success fw-semibold';
-                else if (data.status === 'Redirect') statusClass = 'text-primary fw-semibold';
-                else if (data.status === 'Client Error') statusClass = 'text-warning fw-semibold';
-                else if (data.status === 'Server Error' || data.status === 'Offline') statusClass = 'text-danger fw-semibold';
-
-                const tokenEl = document.querySelector('#scanForm input[name="__RequestVerificationToken"]');
-                const tokenValue = tokenEl ? tokenEl.value : '';
-
-                const trHtml = `
-                    <tr class="fade-in-row">
-                        <td style="max-width: 520px; word-break: break-all;">
-                            ${data.url}
-                        </td>
-                        <td class="${statusClass}">
-                            ${data.status}
-                        </td>
-                        <td>${data.statusCode !== null ? data.statusCode : '-'}</td>
-                        <td>${data.responseTimeMs} ms</td>
-                        <td>
-                            <span class="badge ${riskBadgeClass}">
-                                ${data.riskLevel} (${data.riskScore})
-                            </span>
-                        </td>
-                        <td>
-                            ${data.scannedAt}
-                        </td>
-                        <td>
-                            <a href="/Scan/Details/${data.id}" class="btn btn-sm btn-outline-primary me-1">
-                                Chi tiết
-                            </a>
-                            <form action="/Scan/Delete/${data.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa kết quả này?');">
-                                <input type="hidden" name="__RequestVerificationToken" value="${tokenValue}" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger">
-                                    Xóa
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                `;
-
-                tbody.insertAdjacentHTML('afterbegin', trHtml);
-
-                // Giới hạn hiển thị 20 kết quả quét gần nhất
-                const rows = tbody.querySelectorAll('tr');
-                if (rows.length > 20) {
-                    rows[rows.length - 1].remove();
-                }
-            }
-    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="~/js/scan-page.js" asp-append-version="true"></script>
 }

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
 using NetURLScanner.Models;
@@ -9,6 +10,8 @@ namespace NetURLScanner.Services
 {
     public class UrlScannerService
     {
+        private static readonly HashSet<int> CommonPorts = new() { 80, 443, 8080, 8443 };
+
         private readonly ApplicationDbContext _context;
 
         public UrlScannerService(ApplicationDbContext context)
@@ -119,8 +122,8 @@ namespace NetURLScanner.Services
             }
 
             var trustedBrands = await GetTrustedBrandsAsync();
-
-            var risk = AnalyzeRisk(url, result, trustedBrands);
+            var blacklistResult = await CheckBlacklist(uri?.Host ?? string.Empty);
+            var risk = AnalyzeRisk(url, result, trustedBrands, blacklistResult);
 
             result.RiskScore = risk.Score;
             result.RiskLevel = risk.Level;
@@ -195,29 +198,31 @@ namespace NetURLScanner.Services
         private RiskResult AnalyzeRisk(
             string url,
             UrlScan scan,
-            Dictionary<string, string> trustedBrands)
+            Dictionary<string, string> trustedBrands,
+            (bool IsBlacklisted, string Category, string Severity, string Reason) blacklistResult)
         {
-            int score = 0;
-            List<string> reasons = new();
+            var reasons = new List<string>();
+            var categoryScores = new Dictionary<string, int>();
 
-            Uri? uri = null;
-
+            Uri? uri;
             try
             {
                 uri = new Uri(url);
             }
             catch
             {
-                score += 60;
-                reasons.Add("URL không đúng định dạng");
+                return new RiskResult
+                {
+                    Score = 60,
+                    Level = "Suspicious",
+                    Reasons = new List<string> { "URL không đúng định dạng" }
+                };
             }
 
             string lowerUrl = url.ToLower();
-            string host = uri?.Host.ToLower() ?? lowerUrl;
-            string path = uri?.AbsolutePath.ToLower() ?? "";
-            string query = uri?.Query.ToLower() ?? "";
-
-            var blacklistResult = CheckBlacklist(host).Result;
+            string host = uri.Host.ToLower();
+            string path = uri.AbsolutePath.ToLower();
+            string query = uri.Query.ToLower();
 
             if (blacklistResult.IsBlacklisted)
             {
@@ -235,198 +240,181 @@ namespace NetURLScanner.Services
                 };
             }
 
-
-
             bool isOfficialTrustedDomain = trustedBrands.Values.Any(domain =>
                 host == domain || host.EndsWith("." + domain));
 
+            // Nhóm kết nối & phản hồi (cap 45)
             if (!scan.IsHttps)
             {
-                score += 15;
-                reasons.Add("URL không sử dụng HTTPS");
+                AddCategoryScore(categoryScores, reasons, "connection", 12, "URL không sử dụng HTTPS", 45);
             }
 
             if (scan.Status == "Offline")
             {
-                score += 35;
-                reasons.Add("URL không phản hồi hoặc bị lỗi kết nối, cần thận trọng khi truy cập");
+                AddCategoryScore(categoryScores, reasons, "connection", 30,
+                    "URL không phản hồi hoặc bị lỗi kết nối, cần thận trọng khi truy cập", 45);
             }
-
-            if (scan.Status == "Redirect")
+            else if (scan.Status == "Redirect")
             {
-                score += 10;
-                reasons.Add("URL có chuyển hướng");
+                AddCategoryScore(categoryScores, reasons, "connection", 8, "URL có chuyển hướng", 45);
             }
-
-            if (scan.Status == "Server Error")
+            else if (scan.Status == "Server Error")
             {
-                score += 15;
-                reasons.Add("Máy chủ trả về lỗi 5xx");
+                AddCategoryScore(categoryScores, reasons, "connection", 12, "Máy chủ trả về lỗi 5xx", 45);
             }
 
-            if (scan.ResponseTimeMs > 3000)
-            {
-                score += 10;
-                reasons.Add("Thời gian phản hồi chậm hơn 3 giây");
-            }
-
+            // Hiệu năng: chỉ lấy mức cao nhất (cap 15)
             if (scan.ResponseTimeMs > 7000)
             {
-                score += 15;
-                reasons.Add("Thời gian phản hồi rất chậm");
+                AddCategoryScore(categoryScores, reasons, "performance", 15,
+                    "Thời gian phản hồi rất chậm (> 7 giây)", 15);
+            }
+            else if (scan.ResponseTimeMs > 3000)
+            {
+                AddCategoryScore(categoryScores, reasons, "performance", 8,
+                    "Thời gian phản hồi chậm (> 3 giây)", 15);
             }
 
+            // Cấu trúc URL (cap 35)
             if (url.Length > 100)
             {
-                score += 10;
-                reasons.Add("URL quá dài");
+                AddCategoryScore(categoryScores, reasons, "structure", 8, "URL quá dài", 35);
             }
 
             if (query.Length > 80)
             {
-                score += 10;
-                reasons.Add("Query string dài bất thường");
+                AddCategoryScore(categoryScores, reasons, "structure", 8, "Query string dài bất thường", 35);
             }
 
-            if (host.Count(c => c == '-') >= 2)
+            if (host.Count(c => c == '-') >= 3)
             {
-                score += 10;
-                reasons.Add("Domain có nhiều dấu gạch ngang");
+                AddCategoryScore(categoryScores, reasons, "structure", 10,
+                    "Domain có nhiều dấu gạch ngang", 35);
             }
 
             if (IPAddress.TryParse(host, out _))
             {
-                score += 20;
-                reasons.Add("URL sử dụng địa chỉ IP thay vì domain");
+                AddCategoryScore(categoryScores, reasons, "structure", 18,
+                    "URL sử dụng địa chỉ IP thay vì domain", 35);
             }
 
-            if (uri != null && !uri.IsDefaultPort)
+            if (!uri.IsDefaultPort && !CommonPorts.Contains(uri.Port))
             {
-                score += 10;
-                reasons.Add($"URL sử dụng port không phổ biến: {uri.Port}");
+                AddCategoryScore(categoryScores, reasons, "structure", 8,
+                    $"URL sử dụng port không phổ biến: {uri.Port}", 35);
             }
 
-            int subdomainCount = CountSubdomains(host);
-
-            if (subdomainCount >= 3)
+            if (CountSubdomains(host) >= 3)
             {
-                score += 15;
-                reasons.Add("Domain có quá nhiều subdomain");
+                AddCategoryScore(categoryScores, reasons, "structure", 12,
+                    "Domain có quá nhiều subdomain", 35);
             }
 
+            // Homograph / Punycode (cap 30)
             if (HasNonAsciiCharacter(host))
             {
-                score += 30;
-                reasons.Add("Domain chứa ký tự Unicode bất thường, có thể là homograph attack");
+                AddCategoryScore(categoryScores, reasons, "spoofing", 28,
+                    "Domain chứa ký tự Unicode bất thường, có thể là homograph attack", 30);
             }
-
-            if (host.Contains("xn--"))
+            else if (host.Contains("xn--"))
             {
-                score += 25;
-                reasons.Add("Domain sử dụng punycode, có thể giả mạo ký tự");
-            }
-
-            string[] suspiciousWords =
-            {
-                "login", "verify", "account", "wallet",
-                "gift", "free", "bonus", "secure", "update",
-                "confirm", "password", "payment", "admin",
-                "signin", "reset", "otp", "token", "invoice",
-                "billing", "crypto", "airdrop"
-            };
-
-            if (!isOfficialTrustedDomain)
-            {
-                foreach (var word in suspiciousWords)
-                {
-                    if (lowerUrl.Contains(word))
-                    {
-                        score += 8;
-                        reasons.Add($"URL chứa từ khóa đáng ngờ: {word}");
-                    }
-                }
+                AddCategoryScore(categoryScores, reasons, "spoofing", 22,
+                    "Domain sử dụng punycode, có thể giả mạo ký tự", 30);
             }
 
             string[] gamblingWords =
             {
-                "bet", "betting", "casino", "gambling", "poker",
-                "slot", "jackpot", "odds", "wager", "baccarat",
-                "roulette", "sportsbook", "bookmaker",
-
-                "taixiu", "tai-xiu", "xocdia", "xoc-dia",
-                "keonhacai", "keo-nha-cai", "nhacai", "nha-cai",
-                "cacuoc", "ca-cuoc", "danhbai", "danh-bai",
-                "bong88", "f8bet", "fun88", "m88", "kubet",
-                "fb88", "w88", "188bet"
+                "bet", "betting", "casino", "gambling", "poker", "slot", "jackpot",
+                "odds", "wager", "baccarat", "roulette", "sportsbook", "bookmaker",
+                "taixiu", "tai-xiu", "xocdia", "xoc-dia", "keonhacai", "keo-nha-cai",
+                "nhacai", "nha-cai", "cacuoc", "ca-cuoc", "danhbai", "danh-bai",
+                "bong88", "f8bet", "fun88", "m88", "kubet", "fb88", "w88", "188bet"
             };
-
-            bool hasGamblingKeyword = false;
-
-            foreach (var word in gamblingWords)
-            {
-                if (lowerUrl.Contains(word))
-                {
-                    hasGamblingKeyword = true;
-
-                    score += 60;
-
-                    reasons.Add($"URL chứa từ khóa liên quan đến cá cược/cờ bạc: {word}");
-                    reasons.Add("URL thuộc nhóm nội dung rủi ro cao, có thể tiềm ẩn nguy cơ mất tài sản, lừa đảo tài chính hoặc thu thập thông tin cá nhân.");
-
-                    break;
-                }
-            }
 
             string[] financialActionWords =
             {
-                "login", "account", "payment", "deposit", "withdraw",
-                "wallet", "nap-tien", "ruttien", "rut-tien",
-                "dangnhap", "dang-nhap", "register", "signup",
-                "cash", "money", "banking"
+                "login", "account", "payment", "deposit", "withdraw", "wallet",
+                "nap-tien", "ruttien", "rut-tien", "dangnhap", "dang-nhap",
+                "register", "signup", "cash", "money", "banking"
             };
 
-            bool hasFinancialActionWord = financialActionWords.Any(word =>
-                lowerUrl.Contains(word));
+            string? gamblingMatch = gamblingWords.FirstOrDefault(word => lowerUrl.Contains(word));
+            bool hasGamblingKeyword = gamblingMatch != null;
 
-            if (hasGamblingKeyword && hasFinancialActionWord)
+            if (hasGamblingKeyword)
             {
-                score += 20;
-                reasons.Add("URL cá cược/cờ bạc có liên quan đến đăng nhập, tài khoản, nạp tiền, rút tiền hoặc giao dịch tài chính.");
+                categoryScores["gambling"] = 55;
+                reasons.Add($"URL chứa từ khóa liên quan đến cá cược/cờ bạc: {gamblingMatch}");
+                reasons.Add("URL thuộc nhóm nội dung rủi ro cao, có thể tiềm ẩn nguy cơ mất tài sản, lừa đảo tài chính hoặc thu thập thông tin cá nhân.");
+
+                if (financialActionWords.Any(word => lowerUrl.Contains(word)))
+                {
+                    categoryScores["gambling"] = 70;
+                    reasons.Add("URL cá cược/cờ bạc có liên quan đến đăng nhập, tài khoản, nạp tiền, rút tiền hoặc giao dịch tài chính.");
+                }
             }
-
-            string[] dangerousPathWords =
-            {
-                "wp-admin", "admin", "phpmyadmin", "cpanel", "shell", "cmd"
-            };
 
             if (!isOfficialTrustedDomain)
             {
+                string[] suspiciousWords =
+                {
+                    "login", "verify", "account", "wallet", "gift", "free", "bonus",
+                    "secure", "update", "confirm", "password", "payment", "admin",
+                    "signin", "reset", "otp", "token", "invoice", "billing", "crypto", "airdrop"
+                };
+
+                // Tối đa 3 từ khóa, cap 24 — match theo ranh giới từ
+                int suspiciousCount = 0;
+                foreach (var word in suspiciousWords)
+                {
+                    if (!ContainsKeyword(lowerUrl, word))
+                    {
+                        continue;
+                    }
+
+                    AddCategoryScore(categoryScores, reasons, "keywords", 8,
+                        $"URL chứa từ khóa đáng ngờ: {word}", 24);
+
+                    suspiciousCount++;
+                    if (suspiciousCount >= 3)
+                    {
+                        break;
+                    }
+                }
+
+                string[] dangerousPathWords =
+                {
+                    "wp-admin", "phpmyadmin", "cpanel", "shell", "cmd"
+                };
+
                 foreach (var word in dangerousPathWords)
                 {
-                    if (path.Contains(word))
+                    if (ContainsPathSegment(path, word))
                     {
-                        score += 12;
-                        reasons.Add($"Đường dẫn chứa từ khóa nhạy cảm: {word}");
+                        AddCategoryScore(categoryScores, reasons, "path", 12,
+                            $"Đường dẫn chứa từ khóa nhạy cảm: {word}", 24);
                     }
                 }
             }
 
+            // Brand impersonation: chỉ lấy match mạnh nhất (cap 40)
             var brandRisk = CheckBrandImpersonation(host, url, trustedBrands);
-            score += brandRisk.Score;
-            reasons.AddRange(brandRisk.Reasons);
-
-            var tldRisk = CheckTldRisk(host);
-            score += tldRisk.Score;
-            reasons.AddRange(tldRisk.Reasons);
-
-            score = Math.Min(score, 100);
-
-            string level = score switch
+            if (brandRisk.Score > 0)
             {
-                <= 30 => "Safe",
-                <= 60 => "Warning",
-                _ => "Suspicious"
-            };
+                categoryScores["brand"] = Math.Min(brandRisk.Score, 40);
+                reasons.AddRange(brandRisk.Reasons);
+            }
+
+            // TLD rủi ro: cộng mạnh hơn khi đã có tín hiệu khác
+            var tldRisk = CheckTldRisk(host, categoryScores);
+            if (tldRisk.Score > 0)
+            {
+                categoryScores["tld"] = tldRisk.Score;
+                reasons.AddRange(tldRisk.Reasons);
+            }
+
+            int score = Math.Min(categoryScores.Values.Sum(), 100);
+            string level = DetermineRiskLevel(score, categoryScores, hasGamblingKeyword);
 
             if (!reasons.Any())
             {
@@ -441,30 +429,61 @@ namespace NetURLScanner.Services
             };
         }
 
+        private static void AddCategoryScore(
+            Dictionary<string, int> categories,
+            List<string> reasons,
+            string category,
+            int points,
+            string reason,
+            int cap)
+        {
+            categories.TryGetValue(category, out int current);
+            if (current >= cap)
+            {
+                return;
+            }
+
+            int added = Math.Min(points, cap - current);
+            categories[category] = current + added;
+            reasons.Add(reason);
+        }
+
+        private static string DetermineRiskLevel(int score, Dictionary<string, int> categories, bool hasGambling)
+        {
+            if (hasGambling || categories.GetValueOrDefault("brand") >= 35)
+            {
+                return "Suspicious";
+            }
+
+            if (categories.GetValueOrDefault("spoofing") >= 22 || categories.GetValueOrDefault("brand") >= 25)
+            {
+                return score <= 45 ? "Warning" : "Suspicious";
+            }
+
+            if (score <= 25) return "Safe";
+            if (score <= 55) return "Warning";
+            return "Suspicious";
+        }
+
         private RiskResult CheckBrandImpersonation(
             string host,
             string fullUrl,
             Dictionary<string, string> trustedBrands)
         {
-            int score = 0;
-            List<string> reasons = new();
-
-            string mainName = GetMainDomainName(host);
-            string normalizedMainName = NormalizeLookalike(mainName);
-            string lowerFullUrl = fullUrl.ToLower();
-
             bool isOfficialTrustedDomain = trustedBrands.Values.Any(domain =>
                 host == domain || host.EndsWith("." + domain));
 
             if (isOfficialTrustedDomain)
             {
-                return new RiskResult
-                {
-                    Score = 0,
-                    Level = "",
-                    Reasons = new List<string>()
-                };
+                return new RiskResult { Score = 0, Level = "", Reasons = new List<string>() };
             }
+
+            string mainName = GetMainDomainName(host);
+            string normalizedMainName = NormalizeLookalike(mainName);
+            string lowerFullUrl = fullUrl.ToLower();
+
+            int bestScore = 0;
+            var bestReasons = new List<string>();
 
             foreach (var brand in trustedBrands)
             {
@@ -476,36 +495,39 @@ namespace NetURLScanner.Services
                     continue;
                 }
 
+                int matchScore = 0;
+                var matchReasons = new List<string>();
+
+                if (normalizedMainName == brandName && mainName != brandName)
+                {
+                    matchScore = Math.Max(matchScore, 32);
+                    matchReasons.Add($"Domain dùng ký tự thay thế để giống {brandName}");
+                }
+
                 if (lowerFullUrl.Contains(brandName) && !host.Contains(brandName))
                 {
-                    score += 35;
-                    reasons.Add($"URL chứa tên thương hiệu {brandName} trong đường dẫn hoặc tham số nhưng domain thật không phải domain chính thức");
+                    matchScore = Math.Max(matchScore, 35);
+                    matchReasons.Add($"URL chứa tên thương hiệu {brandName} trong đường dẫn hoặc tham số nhưng domain thật không phải domain chính thức");
                 }
 
                 if (host.Contains(officialDomain))
                 {
-                    score += 35;
-                    reasons.Add($"Domain chứa {officialDomain} nhưng không phải domain chính thức");
+                    matchScore = Math.Max(matchScore, 35);
+                    matchReasons.Add($"Domain chứa {officialDomain} nhưng không phải domain chính thức");
                 }
 
                 bool isShortBrand = brandName.Length <= 3;
 
                 if (!isShortBrand && mainName.Contains(brandName) && host != officialDomain)
                 {
-                    score += 25;
-                    reasons.Add($"Domain có chứa tên thương hiệu {brandName} nhưng không phải domain chính thức");
+                    matchScore = Math.Max(matchScore, 25);
+                    matchReasons.Add($"Domain có chứa tên thương hiệu {brandName} nhưng không phải domain chính thức");
                 }
 
                 if (isShortBrand && mainName == brandName && host != officialDomain)
                 {
-                    score += 25;
-                    reasons.Add($"Domain sử dụng tên viết tắt {brandName} nhưng không phải domain chính thức");
-                }
-
-                if (normalizedMainName == brandName && mainName != brandName)
-                {
-                    score += 30;
-                    reasons.Add($"Domain dùng ký tự thay thế để giống {brandName}");
+                    matchScore = Math.Max(matchScore, 25);
+                    matchReasons.Add($"Domain sử dụng tên viết tắt {brandName} nhưng không phải domain chính thức");
                 }
 
                 bool canUseDistanceCheck =
@@ -513,57 +535,78 @@ namespace NetURLScanner.Services
                     brandName.Length >= 5 &&
                     Math.Abs(mainName.Length - brandName.Length) <= 2;
 
-                int distance = LevenshteinDistance(mainName, brandName);
-
-                if (canUseDistanceCheck && distance > 0 && distance <= 2)
+                if (canUseDistanceCheck)
                 {
-                    score += 25;
-                    reasons.Add($"Domain gần giống thương hiệu {brandName}");
+                    int distance = LevenshteinDistance(mainName, brandName);
+                    if (distance > 0 && distance <= 2)
+                    {
+                        matchScore = Math.Max(matchScore, 28);
+                        matchReasons.Add($"Domain gần giống thương hiệu {brandName}");
+                    }
+                }
+
+                if (matchScore > bestScore)
+                {
+                    bestScore = matchScore;
+                    bestReasons = matchReasons;
                 }
             }
 
             return new RiskResult
             {
-                Score = score,
+                Score = bestScore,
                 Level = "",
-                Reasons = reasons.Distinct().ToList()
+                Reasons = bestReasons.Distinct().ToList()
             };
         }
 
-        private RiskResult CheckTldRisk(string host)
+        private RiskResult CheckTldRisk(string host, Dictionary<string, int> categoryScores)
         {
-            int score = 0;
-            List<string> reasons = new();
-
             string[] riskyTlds =
             {
-                ".xyz", ".top", ".click", ".info", ".shop",
-                ".online", ".work", ".rest", ".site", ".live",
-                ".vip", ".club", ".buzz", ".icu", ".cyou", ".monster"
+                ".xyz", ".top", ".click", ".info", ".shop", ".online", ".work",
+                ".rest", ".site", ".live", ".vip", ".club", ".buzz", ".icu", ".cyou", ".monster"
             };
 
-            if (riskyTlds.Any(tld => host.EndsWith(tld)))
+            if (!riskyTlds.Any(tld => host.EndsWith(tld)))
             {
-                score += 10;
-                reasons.Add("Domain sử dụng đuôi tên miền có mức rủi ro cao");
+                return new RiskResult { Score = 0, Level = "", Reasons = new List<string>() };
             }
+
+            int otherSignals = categoryScores.Where(x => x.Key != "tld").Sum(x => x.Value);
+            int score = otherSignals >= 15 ? 12 : 5;
 
             return new RiskResult
             {
                 Score = score,
                 Level = "",
-                Reasons = reasons
+                Reasons = new List<string>
+                {
+                    otherSignals >= 15
+                        ? "Domain dùng TLD rủi ro kết hợp với các dấu hiệu bất thường khác"
+                        : "Domain sử dụng đuôi tên miền có mức rủi ro cao"
+                }
             };
+        }
+
+        private static bool ContainsKeyword(string text, string keyword)
+        {
+            string pattern = $@"(^|[/\?&=\-_.]){Regex.Escape(keyword)}([/\?&=\-_.]|$)";
+            return Regex.IsMatch(text, pattern, RegexOptions.IgnoreCase);
+        }
+
+        private static bool ContainsPathSegment(string path, string segment)
+        {
+            return path.Split('/', StringSplitOptions.RemoveEmptyEntries)
+                .Any(part => part.Equals(segment, StringComparison.OrdinalIgnoreCase)
+                          || part.StartsWith(segment + "-", StringComparison.OrdinalIgnoreCase)
+                          || part.EndsWith("-" + segment, StringComparison.OrdinalIgnoreCase));
         }
 
         private int CountSubdomains(string host)
         {
             var parts = host.Split('.', StringSplitOptions.RemoveEmptyEntries);
-
-            if (parts.Length <= 2)
-                return 0;
-
-            return parts.Length - 2;
+            return parts.Length <= 2 ? 0 : parts.Length - 2;
         }
 
         private string GetMainDomainName(string host)
@@ -591,17 +634,10 @@ namespace NetURLScanner.Services
             }
 
             var parts = host.Split('.', StringSplitOptions.RemoveEmptyEntries);
-
-            if (parts.Length < 2)
-                return host;
-
-            return parts[^2];
+            return parts.Length < 2 ? host : parts[^2];
         }
 
-        private bool HasNonAsciiCharacter(string text)
-        {
-            return text.Any(c => c > 127);
-        }
+        private bool HasNonAsciiCharacter(string text) => text.Any(c => c > 127);
 
         private string NormalizeLookalike(string input)
         {
@@ -631,12 +667,8 @@ namespace NetURLScanner.Services
                     int cost = a[i - 1] == b[j - 1] ? 0 : 1;
 
                     dp[i, j] = Math.Min(
-                        Math.Min(
-                            dp[i - 1, j] + 1,
-                            dp[i, j - 1] + 1
-                        ),
-                        dp[i - 1, j - 1] + cost
-                    );
+                        Math.Min(dp[i - 1, j] + 1, dp[i, j - 1] + 1),
+                        dp[i - 1, j - 1] + cost);
                 }
             }
 
@@ -649,7 +681,7 @@ namespace NetURLScanner.Services
             {
                 var addresses = await Dns.GetHostAddressesAsync(host);
                 var ipv4 = addresses.FirstOrDefault(x => x.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.ToString();
-                
+
                 if (string.IsNullOrEmpty(ipv4))
                 {
                     return ("-", "Unknown", "-", "Unknown", "Unknown", null, null);
@@ -658,7 +690,7 @@ namespace NetURLScanner.Services
                 using var client = new HttpClient();
                 client.Timeout = TimeSpan.FromSeconds(5);
                 var response = await client.GetAsync($"http://ip-api.com/json/{ipv4}");
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadFromJsonAsync<IpApiResponse>();

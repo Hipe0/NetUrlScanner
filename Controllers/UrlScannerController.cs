@@ -31,27 +31,7 @@ namespace NetURLScanner.Controllers
             return View(scans);
         }
 
-        [HttpPost("")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Scan(string url)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-            {
-                TempData["Error"] = "Vui lòng nhập URL cần quét.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var result = await _scannerService.ScanAsync(url);
-
-            _context.UrlScans.Add(result);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "Quét URL thành công.";
-
-            return RedirectToAction(nameof(Details), new { id = result.Id });
-        }
-
-        [HttpPost("ScanAjax")]
+        [HttpPost("/Scan/ScanAjax")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ScanAjax(string url)
         {
@@ -169,7 +149,7 @@ namespace NetURLScanner.Controllers
             return View(scans);
         }
 
-        [HttpPost("Delete/{id}")]
+        [HttpPost("/Scan/Delete/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {

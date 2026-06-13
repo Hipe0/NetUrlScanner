@@ -162,7 +162,7 @@
                     <h5 class="fw-bold mb-0 text-primary">Xem trước giao diện website</h5>
                 </div>
                 <div class="card-body p-4 d-flex flex-column">
-                    <div class="browser-mockup flex-grow-1 d-flex flex-column mb-0">
+                    <div class="browser-mockup mb-0">
                         <div class="browser-header">
                             <div class="browser-dots">
                                 <span class="browser-dot red"></span>
@@ -171,7 +171,7 @@
                             </div>
                             <div class="browser-address">@Model.Url</div>
                         </div>
-                        <div class="browser-body flex-grow-1" style="position: relative; min-height: 260px;">
+                        <div class="browser-body">
                             @if (Model.Status == "Offline")
                             {
                                 <div class="browser-offline-placeholder">
@@ -184,9 +184,9 @@
                             {
                                 string cleanUrl = Model.Url.Replace("http://", "", StringComparison.OrdinalIgnoreCase)
                                                            .Replace("https://", "", StringComparison.OrdinalIgnoreCase);
-                                string screenshotUrl = $"https://s0.wp.com/mshots/v1/{System.Net.WebUtility.UrlEncode(cleanUrl)}?w=1200";
+                                string screenshotUrl = $"https://s0.wp.com/mshots/v1/{System.Net.WebUtility.UrlEncode(cleanUrl)}?w=560";
                                 
-                                <img src="@screenshotUrl" alt="Live Preview" onerror="this.style.display='none'; document.getElementById('detailsScreenshotError').classList.remove('d-none');" />
+                                <img src="@screenshotUrl" alt="Live Preview" decoding="async" fetchpriority="high" onerror="this.style.display='none'; document.getElementById('detailsScreenshotError').classList.remove('d-none');" />
                                 <div id="detailsScreenshotError" class="browser-offline-placeholder d-none">
                                     <i class="bi bi-exclamation-triangle fs-1 mb-2 text-warning"></i>
                                     <span class="fw-bold">Lỗi tải ảnh xem trước</span>
