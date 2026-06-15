@@ -61,32 +61,38 @@
                             </a>
                         </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link text-body"
-                               asp-area=""
-                               asp-controller="UrlScanner"
-                               asp-action="History">
-                                Lịch sử quét
-                            </a>
-                        </li>
+                        @if (User?.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-body"
+                                   asp-area=""
+                                   asp-controller="UrlScanner"
+                                   asp-action="History">
+                                    Lịch sử quét
+                                </a>
+                            </li>
+                        }
 
-                        <li class="nav-item">
-                            <a class="nav-link text-body"
-                               asp-area=""
-                               asp-controller="TrustedBrands"
-                               asp-action="Index">
-                                Whitelist
-                            </a>
-                        </li>
+                        @if (User?.Identity?.IsAuthenticated == true && (User.IsInRole("Admin") || User.IsInRole("Manager")))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-body"
+                                   asp-area=""
+                                   asp-controller="TrustedBrands"
+                                   asp-action="Index">
+                                    Whitelist
+                                </a>
+                            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link text-body"
-                               asp-area=""
-                               asp-controller="BlacklistedDomains"
-                               asp-action="Index">
-                                Blacklist
-                            </a>
-                        </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-body"
+                                   asp-area=""
+                                   asp-controller="BlacklistedDomains"
+                                   asp-action="Index">
+                                    Blacklist
+                                </a>
+                            </li>
+                        }
 
                         <li class="nav-item">
                             <a class="nav-link text-body"
@@ -97,6 +103,18 @@
                             </a>
                         </li>
 
+                        @if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-danger fw-bold"
+                                   asp-area=""
+                                   asp-controller="User"
+                                   asp-action="Index">
+                                    Phân quyền
+                                </a>
+                            </li>
+                        }
+
                         <li class="nav-item">
                             <a class="nav-link text-primary fw-semibold"
                                href="/swagger"
@@ -106,8 +124,21 @@
                         </li>
                     </ul>
 
-                    <!-- Nút chuyển đổi Dark Mode -->
-                    <div class="d-flex align-items-center ms-auto mt-2 mt-sm-0">
+                    <!-- Nút đăng nhập/đăng ký & chuyển đổi Dark Mode -->
+                    <div class="d-flex align-items-center ms-auto mt-2 mt-sm-0 gap-2">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <span class="text-muted me-2">Xin chào, @User.Identity.Name</span>
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Đăng xuất</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary btn-sm">Đăng nhập</a>
+                            <a asp-controller="Account" asp-action="Register" class="btn btn-primary btn-sm">Đăng ký</a>
+                        }
+
                         <button class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center"
                                 id="themeToggle"
                                 style="width: 32px; height: 32px;"

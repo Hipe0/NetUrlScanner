@@ -32,6 +32,15 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Cấu hình Cookie Authentication
+builder.Services.AddAuthentication("Cookies")
+    .AddCookie("Cookies", options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+    });
+
 builder.Services.AddScoped<UrlScannerService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -66,6 +75,8 @@ app.UseStatusCodePagesWithReExecute("/Home/Error404");
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
@@ -83,11 +94,26 @@ _ = Task.Run(async () =>
         _ = await db.TrustedBrands.AnyAsync();
         _ = await db.BlacklistedDomains.AnyAsync();
 
+        // Khởi tạo tài khoản Admin mặc định
+        if (!await db.Users.AnyAsync(u => u.Email == "admin123@gmail.com"))
+        {
+            var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<NetURLScanner.Models.User>();
+            var adminUser = new NetURLScanner.Models.User
+            {
+                Email = "admin123@gmail.com",
+                Role = "Admin"
+            };
+            adminUser.PasswordHash = hasher.HashPassword(adminUser, "admin123");
+            db.Users.Add(adminUser);
+            await db.SaveChangesAsync();
+        }
+
         using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
         _ = await client.GetAsync("http://ip-api.com/json/8.8.8.8");
     }
-    catch
+    catch (Exception ex)
     {
+        Console.WriteLine($"Error during startup: {ex.Message}");
         // Fail silently
     }
 });

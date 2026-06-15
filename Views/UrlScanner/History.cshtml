@@ -5,6 +5,7 @@
 }
 
 <div class="container mt-4">
+    @Html.AntiForgeryToken()
     <div class="mb-4">
         <h2 class="fw-bold">Lịch sử quét URL</h2>
         <p class="text-muted mb-3">
@@ -147,11 +148,14 @@
                                 </td>
 
                                 <td class="text-center action-col">
-                                    <a asp-action="Details"
-                                       asp-route-id="@item.Id"
-                                       class="btn btn-sm btn-outline-primary">
-                                        Chi tiết
-                                    </a>
+                                    <div class="d-flex justify-content-center gap-1">
+                                        <button class="btn btn-sm btn-outline-primary btn-details" data-id="@item.Id">
+                                            <i class="bi bi-info-circle"></i> Chi tiết
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger btn-delete" data-id="@item.Id">
+                                            <i class="bi bi-trash"></i> Xóa
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -183,6 +187,32 @@
         </nav>
     }
 </div>
+
+<!-- Modal Chi Tiết Quét -->
+<div class="modal fade" id="scanDetailsModal" tabindex="-1" aria-labelledby="scanDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="scanDetailsModalLabel"><i class="bi bi-shield-check me-2"></i>Chi tiết kết quả quét</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="scanDetailsContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <a id="btnExportPdf" href="#" class="btn btn-success">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> Xuất báo cáo PDF
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -230,6 +260,75 @@
                         }
                     }
                 }
+            });
+            
+            // Xử lý nút Chi tiết (Mở Modal)
+            const detailsModal = new bootstrap.Modal(document.getElementById('scanDetailsModal'));
+            
+            document.querySelectorAll('.btn-details').forEach(button => {
+                button.addEventListener('click', function () {
+                    const scanId = this.getAttribute('data-id');
+                    const contentDiv = document.getElementById('scanDetailsContent');
+                    
+                    // Hiện loading
+                    contentDiv.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Đang tải...</span></div></div>';
+                    
+                    // Đặt link xuất PDF
+                    document.getElementById('btnExportPdf').href = '/Scan/ExportPdf/' + scanId;
+                    
+                    // Hiển thị modal
+                    detailsModal.show();
+                    
+                    // Gọi AJAX lấy HTML partial view
+                    fetch('/Scan/DetailsPartial/' + scanId)
+                        .then(response => {
+                            if (!response.ok) throw new Error("Lỗi tải dữ liệu");
+                            return response.text();
+                        })
+                        .then(html => {
+                            contentDiv.innerHTML = html;
+                        })
+                        .catch(error => {
+                            contentDiv.innerHTML = '<div class="alert alert-danger">Đã xảy ra lỗi khi tải dữ liệu chi tiết.</div>';
+                        });
+                });
+            });
+
+            // Xử lý nút Xóa (AJAX + Toast)
+            document.querySelectorAll('.btn-delete').forEach(button => {
+                button.addEventListener('click', function () {
+                    if (!confirm('Bạn có chắc chắn muốn xóa kết quả này?')) return;
+                    
+                    const scanId = this.getAttribute('data-id');
+                    const row = this.closest('tr');
+                    
+                    // Lấy token chống giả mạo
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                    
+                    const formData = new FormData();
+                    if (token) formData.append('__RequestVerificationToken', token);
+                    
+                    fetch('/Scan/Delete/' + scanId, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Hiện Toast xanh
+                            window.showToast(data.message, 'success');
+                            // Xóa dòng khỏi bảng hiệu ứng mượt
+                            row.style.transition = "all 0.4s";
+                            row.style.opacity = "0";
+                            setTimeout(() => row.remove(), 400);
+                        } else {
+                            window.showToast(data.message || 'Lỗi khi xóa', 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        window.showToast('Lỗi kết nối server', 'danger');
+                    });
+                });
             });
         });
     </script>

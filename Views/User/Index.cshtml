@@ -1,0 +1,64 @@
+@model IEnumerable<NetURLScanner.Models.User>
+
+@{
+    ViewData["Title"] = "Quản lý Phân quyền";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4"><i class="bi bi-people"></i> Quản lý người dùng & Phân quyền</h2>
+    
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>Quyền hiện tại</th>
+                        <th>Cập nhật Quyền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Id</td>
+                            <td>@item.Email</td>
+                            <td>
+                                @if (item.Role == "Admin")
+                                {
+                                    <span class="badge bg-danger">Admin</span>
+                                }
+                                else if (item.Role == "Manager")
+                                {
+                                    <span class="badge bg-warning text-dark">Manager</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">User</span>
+                                }
+                            </td>
+                            <td>
+                                @if (item.Email != "admin123@gmail.com")
+                                {
+                                    <form asp-action="ChangeRole" method="post" class="d-flex align-items-center gap-2">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <select name="role" class="form-select form-select-sm" style="width: auto;">
+                                            @if (item.Role == "User") { <option value="User" selected>User</option> } else { <option value="User">User</option> }
+                                            @if (item.Role == "Manager") { <option value="Manager" selected>Manager</option> } else { <option value="Manager">Manager</option> }
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-primary">Lưu</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="text-muted fst-italic">Tài khoản mặc định</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

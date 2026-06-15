@@ -1,0 +1,126 @@
+@model NetURLScanner.Models.UrlScan
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="p-3 bg-light rounded h-100">
+            <h6 class="fw-bold text-muted mb-3"><i class="bi bi-info-circle me-2"></i>Thông tin chung</h6>
+            <dl class="row mb-0">
+                <dt class="col-sm-5 text-muted">URL</dt>
+                <dd class="col-sm-7 text-break fw-semibold">@Model.Url</dd>
+
+                <dt class="col-sm-5 text-muted">Mức độ rủi ro</dt>
+                <dd class="col-sm-7">
+                    @{
+                        string badgeClass = Model.RiskLevel switch
+                        {
+                            "Safe" => "bg-success",
+                            "Warning" => "bg-warning text-dark",
+                            "Suspicious" => "bg-danger",
+                            _ => "bg-secondary"
+                        };
+                    }
+                    <span class="badge @badgeClass">@Model.RiskLevel</span>
+                </dd>
+
+                <dt class="col-sm-5 text-muted">Điểm rủi ro</dt>
+                <dd class="col-sm-7">
+                    <span class="fw-bold fs-5">@Model.RiskScore</span> <span class="text-muted">/ 100</span>
+                </dd>
+
+                <dt class="col-sm-5 text-muted">Trạng thái kết nối</dt>
+                <dd class="col-sm-7">
+                    @{
+                        string statusClass = Model.Status switch
+                        {
+                            "Online" => "text-success fw-semibold",
+                            "Redirect" => "text-primary fw-semibold",
+                            "Client Error" => "text-warning fw-semibold",
+                            "Server Error" => "text-danger fw-semibold",
+                            "Offline" => "text-danger fw-semibold",
+                            _ => "text-muted"
+                        };
+                    }
+                    <span class="@statusClass">@Model.Status</span>
+                </dd>
+
+                <dt class="col-sm-5 text-muted">Mã HTTP</dt>
+                <dd class="col-sm-7">@(Model.StatusCode?.ToString() ?? "N/A")</dd>
+
+                <dt class="col-sm-5 text-muted">Thời gian quét</dt>
+                <dd class="col-sm-7">@Model.ScannedAt.ToString("dd/MM/yyyy HH:mm:ss")</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="p-3 bg-light rounded h-100">
+            <h6 class="fw-bold text-muted mb-3"><i class="bi bi-globe me-2"></i>Thông tin Server & Vị trí</h6>
+            <dl class="row mb-0">
+                <dt class="col-sm-5 text-muted">Bảo mật HTTPS</dt>
+                <dd class="col-sm-7">
+                    @if (Model.IsHttps)
+                    {
+                        <span class="text-success"><i class="bi bi-lock-fill me-1"></i>Có (An toàn)</span>
+                    }
+                    else
+                    {
+                        <span class="text-danger"><i class="bi bi-unlock-fill me-1"></i>Không (Kém an toàn)</span>
+                    }
+                </dd>
+
+                <dt class="col-sm-5 text-muted">Địa chỉ IP</dt>
+                <dd class="col-sm-7">@(string.IsNullOrEmpty(Model.IpAddress) ? "N/A" : Model.IpAddress)</dd>
+
+                <dt class="col-sm-5 text-muted">Quốc gia</dt>
+                <dd class="col-sm-7">
+                    @if (!string.IsNullOrEmpty(Model.CountryName))
+                    {
+                        @Model.CountryName
+                        if (!string.IsNullOrEmpty(Model.CountryCode))
+                        {
+                            <span class="ms-1">(<img src="https://flagcdn.com/16x12/@(Model.CountryCode.ToLower()).png" alt="@Model.CountryCode">)</span>
+                        }
+                    }
+                    else
+                    {
+                        <span>N/A</span>
+                    }
+                </dd>
+
+                <dt class="col-sm-5 text-muted">Thành phố</dt>
+                <dd class="col-sm-7">@(string.IsNullOrEmpty(Model.City) ? "N/A" : Model.City)</dd>
+
+                <dt class="col-sm-5 text-muted">Nhà cung cấp (ISP)</dt>
+                <dd class="col-sm-7">@(string.IsNullOrEmpty(Model.Isp) ? "N/A" : Model.Isp)</dd>
+            </dl>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.Reasons))
+    {
+        <div class="col-12 mt-3">
+            <div class="p-3 rounded border border-danger bg-danger bg-opacity-10">
+                <h6 class="fw-bold text-danger mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Lý do đánh giá rủi ro</h6>
+                <ul class="mb-0 text-danger-emphasis ps-3">
+                    @foreach (var reason in Model.Reasons.Split(';', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        if (!string.IsNullOrWhiteSpace(reason))
+                        {
+                            <li>@reason.Trim()</li>
+                        }
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="col-12 mt-3">
+            <div class="p-3 rounded border border-secondary bg-secondary bg-opacity-10">
+                <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-bug-fill me-2"></i>Lỗi kết nối</h6>
+                <p class="mb-0 font-monospace small">@Model.ErrorMessage</p>
+            </div>
+        </div>
+    }
+</div>

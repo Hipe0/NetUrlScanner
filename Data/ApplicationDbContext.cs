@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Models;
 
 namespace NetURLScanner.Data
@@ -15,6 +15,8 @@ namespace NetURLScanner.Data
         public DbSet<TrustedBrand> TrustedBrands { get; set; }
 
         public DbSet<BlacklistedDomain> BlacklistedDomains { get; set; }
+
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

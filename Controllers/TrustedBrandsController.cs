@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
 using NetURLScanner.Models;
+using Microsoft.AspNetCore.Authorization;
 using NetURLScanner.Services;
 using System.Text.RegularExpressions;
 
 namespace NetURLScanner.Controllers
 {
-    [Route("Whitelist")]
+    [Route("Manager/Whitelist")]
+    [Authorize(Roles = "Admin,Manager")]
     public class TrustedBrandsController : Controller
     {
         private readonly ApplicationDbContext _context;

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
 using NetURLScanner.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace NetURLScanner.Controllers
 {
@@ -88,6 +89,7 @@ namespace NetURLScanner.Controllers
         }
 
         [HttpGet("Details/{id}")]
+        [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> Details(int id)
         {
             var scan = await _context.UrlScans.FindAsync(id);
@@ -100,7 +102,22 @@ namespace NetURLScanner.Controllers
             return View(scan);
         }
 
+        [HttpGet("DetailsPartial/{id}")]
+        [Authorize(Roles = "Admin,Manager,User")]
+        public async Task<IActionResult> DetailsPartial(int id)
+        {
+            var scan = await _context.UrlScans.FindAsync(id);
+
+            if (scan == null)
+            {
+                return NotFound();
+            }
+
+            return PartialView("_ScanDetails", scan);
+        }
+
         [HttpGet("~/History")]
+        [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> History(string search, string status, string riskLevel, int page = 1)
         {
             var query = _context.UrlScans.AsNoTracking().AsQueryable();
@@ -151,21 +168,87 @@ namespace NetURLScanner.Controllers
 
         [HttpPost("/Scan/Delete/{id}")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> Delete(int id)
         {
             var scan = await _context.UrlScans.FindAsync(id);
 
             if (scan == null)
             {
-                return NotFound();
+                return Json(new { success = false, message = "Không tìm thấy kết quả quét." });
             }
 
             _context.UrlScans.Remove(scan);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Đã xóa kết quả quét.";
+            return Json(new { success = true, message = "Đã xóa thành công" });
+        }
 
-            return RedirectToAction(nameof(Index));
+        [HttpGet("/Scan/ExportPdf/{id}")]
+        [Authorize(Roles = "Admin,Manager,User")]
+        public async Task<IActionResult> ExportPdf(int id)
+        {
+            var scan = await _context.UrlScans.FindAsync(id);
+            if (scan == null)
+            {
+                return NotFound("Không tìm thấy kết quả quét.");
+            }
+
+            using var stream = new MemoryStream();
+            using var writer = new iText.Kernel.Pdf.PdfWriter(stream);
+            using var pdf = new iText.Kernel.Pdf.PdfDocument(writer);
+            using var document = new iText.Layout.Document(pdf);
+
+            // Sử dụng font Arial của Windows với mã hóa Unicode (IDENTITY_H) để hỗ trợ tiếng Việt
+            string fontPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "arial.ttf");
+            iText.Kernel.Font.PdfFont pdfFont;
+            
+            try
+            {
+                pdfFont = iText.Kernel.Font.PdfFontFactory.CreateFont(fontPath, iText.IO.Font.PdfEncodings.IDENTITY_H);
+            }
+            catch
+            {
+                // Fallback nếu không tìm thấy Arial
+                pdfFont = iText.Kernel.Font.PdfFontFactory.CreateFont(iText.IO.Font.Constants.StandardFonts.HELVETICA);
+            }
+
+            document.SetFont(pdfFont);
+
+            document.Add(new iText.Layout.Element.Paragraph("NETURLSCANNER - SCAN REPORT")
+                .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                .SetFontSize(20));
+
+            document.Add(new iText.Layout.Element.Paragraph("\n"));
+
+            document.Add(new iText.Layout.Element.Paragraph($"URL: {scan.Url}").SetFontSize(14));
+            document.Add(new iText.Layout.Element.Paragraph($"Risk Level: {scan.RiskLevel}"));
+            document.Add(new iText.Layout.Element.Paragraph($"Risk Score: {scan.RiskScore}/100"));
+            document.Add(new iText.Layout.Element.Paragraph($"Status: {scan.Status} (Code: {scan.StatusCode})"));
+            document.Add(new iText.Layout.Element.Paragraph($"Response Time: {scan.ResponseTimeMs} ms"));
+            document.Add(new iText.Layout.Element.Paragraph($"Scanned At: {scan.ScannedAt:dd/MM/yyyy HH:mm:ss}"));
+
+            document.Add(new iText.Layout.Element.Paragraph("\n--- Server Information ---"));
+            document.Add(new iText.Layout.Element.Paragraph($"IP Address: {(string.IsNullOrEmpty(scan.IpAddress) ? "N/A" : scan.IpAddress)}"));
+            document.Add(new iText.Layout.Element.Paragraph($"Country: {scan.CountryName}"));
+            document.Add(new iText.Layout.Element.Paragraph($"City: {scan.City}"));
+            document.Add(new iText.Layout.Element.Paragraph($"ISP: {scan.Isp}"));
+
+            if (!string.IsNullOrEmpty(scan.Reasons))
+            {
+                document.Add(new iText.Layout.Element.Paragraph("\n--- Risk Reasons ---"));
+                foreach (var reason in scan.Reasons.Split(';', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (!string.IsNullOrWhiteSpace(reason))
+                    {
+                        document.Add(new iText.Layout.Element.Paragraph($"- {reason.Trim()}"));
+                    }
+                }
+            }
+
+            document.Close();
+
+            return File(stream.ToArray(), "application/pdf", $"ScanReport_{scan.Id}.pdf");
         }
     }
 }

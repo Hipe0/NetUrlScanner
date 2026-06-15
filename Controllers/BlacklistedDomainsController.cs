@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
 using NetURLScanner.Models;
+using Microsoft.AspNetCore.Authorization;
 using NetURLScanner.Services;
 using System.Text.RegularExpressions;
 
 namespace NetURLScanner.Controllers
 {
-    [Route("Blacklist")]
+    [Route("Manager/Blacklist")]
+    [Authorize(Roles = "Admin,Manager")]
     public class BlacklistedDomainsController : Controller
     {
         private readonly ApplicationDbContext _context;
