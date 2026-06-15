@@ -194,10 +194,34 @@ URL cá cược/cờ bạc
 https://f8bet.vn
 https://casino-online.xyz
 https://casino-login-payment.xyz
-Thành viên thực hiện
+## Các tính năng nâng cao (Mới cập nhật)
+
+### Đăng nhập, Đăng ký và Phân quyền 
+- **Cơ chế xác thực (Cookie Authentication):** Sử dụng xác thực bằng Cookie an toàn. Khi người dùng đăng nhập, hệ thống lưu một "Cookie" để định danh phiên làm việc.
+- **Mã hoá Mật khẩu:** Tất cả mật khẩu đều được băm (hash) bằng công nghệ `PasswordHasher` của ASP.NET Core Identity. Mật khẩu lưu vào cơ sở dữ liệu sẽ ở dạng mã hóa không thể đảo ngược, đảm bảo an toàn tối đa chống lại các cuộc tấn công dò mật khẩu.
+- **Phân 3 cấp quyền:**
+  - **Admin (Tài khoản duy nhất):** Có toàn quyền truy cập. Mặc định là `admin123@gmail.com`. Admin có thêm tính năng **Phân quyền** để quản lý cấp bậc của những tài khoản khác. Hệ thống chặn việc tạo nhiều Admin để đảm bảo an toàn.
+  - **Manager:** Được cấp phép quản lý danh sách Whitelist, Blacklist, xem Lịch sử chung.
+  - **User:** Chỉ được phép Quét URL và xem lịch sử, không có quyền vào các trang cấu hình hệ thống.
+  - **Guest (Chưa đăng nhập):** Chỉ được phép thao tác ở màn hình Quét URL cơ bản. Các thanh điều hướng (Navbar) tự động thay đổi, ẩn đi các tính năng nhạy cảm.
+
+### Thông báo nổi (Toast Notifications) với AJAX
+- Tính năng xóa trong Lịch sử quét đã được nâng cấp bằng kỹ thuật **AJAX (Asynchronous JavaScript and XML)** qua hàm `fetch()`.
+- Thay vì phải tải lại (reload) toàn bộ trang web khi xóa một bản ghi, hệ thống sẽ xóa ngầm. Sau đó, màn hình hiển thị một **Bootstrap Toast** (thông báo nhỏ trượt ra ở góc màn hình) màu xanh lá để báo hiệu thành công, đồng thời hàng chứa dữ liệu bị xóa sẽ mờ dần và tự động biến mất một cách mượt mà.
+
+### Xem Chi tiết Quét bằng Modal (Popup)
+- Hệ thống không cần chuyển hướng sang trang web khác để xem chi tiết kết quả quét như trước đây.
+- Các thông tin chi tiết (Mức độ rủi ro, Thông tin Server, Lý do rủi ro) được thiết kế thành một **Partial View**. Khi người dùng nhấn nút "Chi tiết", AJAX sẽ tải nội dung của Partial View này và đắp trực tiếp lên một **Bootstrap Modal** (Hộp thoại Popup) ngay tại trang hiện tại, tạo cảm giác chuyên nghiệp giống như một ứng dụng (Single-Page Application).
+
+### Xuất Báo Cáo sang PDF
+- Tích hợp bộ thư viện **iText7** tiên tiến nhất.
+- Tại cửa sổ Modal chi tiết, người dùng có nút **Xuất báo cáo PDF**. Khi nhấn vào, Controller sẽ tạo một tập tin PDF động ngay tức thì chứa đầy đủ mọi thông số bảo mật, điểm rủi ro, và chi tiết IP/Quốc gia của Server.
+- Đặc biệt, hệ thống đã được tinh chỉnh để tải **Font Arial (Windows)** và mã hóa **IDENTITY_H**, giúp hiển thị tiếng Việt có dấu chuẩn xác 100% khi in thành file báo cáo, phục vụ trực tiếp cho các tác vụ kiểm tra an ninh mạng.
+
+## Thành viên thực hiện
 Hồ Đắc Hiệp
 Trần Gia Bảo
 Phan Gia Bảo
-Ghi chú
 
+## Ghi chú
 Kết quả đánh giá của NetURLScanner dựa trên các rule đã định nghĩa. Hệ thống không khẳng định tuyệt đối một URL là an toàn hoặc độc hại, mà cung cấp điểm rủi ro để người dùng có thêm cơ sở xem xét trước khi truy cập.
