@@ -112,7 +112,7 @@
                 </div>
                 <div id="step-5" class="loading-step mb-0 text-muted">
                     <i class="bi bi-circle me-2"></i>
-                    <span>Bước 5: Định vị địa lý máy chủ & chuẩn bị ảnh xem trước...</span>
+                    <span>Bước 5: Định vị địa lý máy chủ & hoàn tất báo cáo...</span>
                 </div>
             </div>
         </div>
@@ -131,7 +131,7 @@
         <div class="card-body p-4">
             <div class="row g-4">
                 <!-- Cột trái: Đồng hồ, thông tin hạ tầng & Bản đồ -->
-                <div class="col-lg-6">
+                <div class="col-lg-6 d-flex flex-column">
                     <div class="row g-3 align-items-center mb-3">
                         <div class="col-sm-5 text-center">
                             <div class="gauge-wrapper">
@@ -172,41 +172,22 @@
                     </div>
                     
                     <!-- Leaflet Map Wrapper -->
-                    <div class="leaflet-map-card">
-                        <div id="ajaxMap" class="leaflet-map-div"></div>
+                    <div class="leaflet-map-card flex-grow-1 d-flex">
+                        <div id="ajaxMap" class="leaflet-map-div h-100 flex-grow-1" style="min-height: 250px;"></div>
                     </div>
                 </div>
 
-                <!-- Cột phải: Đánh giá & Ảnh chụp xem trước (Browser Mockup) -->
-                <div class="col-lg-6">
-                    <div class="mb-3 text-start">
-                        <h6 class="fw-bold mb-2">Đánh giá của hệ thống:</h6>
-                        <ul id="ajaxReasonsList" class="list-group list-group-flush mb-0 border rounded-3 p-2 bg-body-tertiary" style="max-height: 120px; overflow-y: auto; font-size: 0.9rem;">
-                            <!-- Lý do đổ từ JS -->
-                        </ul>
-                    </div>
-
-                    <!-- Browser Mockup -->
-                    <div class="browser-mockup">
-                        <div class="browser-header">
-                            <div class="browser-dots">
-                                <span class="browser-dot red"></span>
-                                <span class="browser-dot yellow"></span>
-                                <span class="browser-dot green"></span>
-                            </div>
-                            <div class="browser-address" id="ajaxBrowserAddress">https://...</div>
+                <!-- Cột phải: Đánh giá chi tiết của hệ thống -->
+                <div class="col-lg-6 d-flex flex-column">
+                    <div class="card border rounded-3 bg-body-tertiary h-100 shadow-sm">
+                        <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
+                            <h5 class="fw-bold mb-0 text-primary">Đánh giá chi tiết từ hệ thống</h5>
                         </div>
-                        <div class="browser-body">
-                            <img id="ajaxScreenshotImg" src="" alt="Live Preview" class="d-none" decoding="async" fetchpriority="high" />
-                            <div id="ajaxScreenshotOffline" class="browser-offline-placeholder d-none">
-                                <i class="bi bi-cloud-slash fs-1 mb-2"></i>
-                                <span class="fw-bold">Website không phản hồi</span>
-                                <span class="small text-muted">Không thể tạo ảnh chụp màn hình xem trước.</span>
-                            </div>
-                            <div id="ajaxScreenshotLoading" class="browser-offline-placeholder">
-                                <div class="spinner-border text-primary spinner-border-sm mb-2" role="status"></div>
-                                <span class="small text-muted">Đang chụp ảnh màn hình...</span>
-                            </div>
+                        <div class="card-body p-4 d-flex flex-column">
+                            <p class="text-muted small mb-3">Các dấu hiệu bất thường hoặc an toàn được phát hiện sau khi phân tích:</p>
+                            <ul id="ajaxReasonsList" class="list-group list-group-flush flex-grow-1 overflow-y-auto mb-0" style="max-height: 280px; font-size: 0.95rem;">
+                                <!-- Lý do đổ từ JS -->
+                            </ul>
                         </div>
                     </div>
                 </div>

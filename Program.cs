@@ -47,23 +47,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "NetURLScanner API v1");
-    c.RoutePrefix = "swagger";
-});
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "NetURLScanner API v1");
-        options.RoutePrefix = "api/docs";
-        options.DocumentTitle = "NetURLScanner API Docs";
-    });
-}
 
 if (!app.Environment.IsDevelopment())
 {
@@ -78,6 +62,37 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Chỉ cho phép tài khoản có quyền Admin truy cập Swagger UI và API Docs
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/swagger") || context.Request.Path.StartsWithSegments("/api/docs"))
+    {
+        if (context.User?.Identity?.IsAuthenticated != true || !context.User.IsInRole("Admin"))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return;
+        }
+    }
+    await next();
+});
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "NetURLScanner API v1");
+    c.RoutePrefix = "swagger";
+});
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "NetURLScanner API v1");
+        options.RoutePrefix = "api/docs";
+        options.DocumentTitle = "NetURLScanner API Docs";
+    });
+}
 
 app.MapControllers();
 app.MapControllerRoute(

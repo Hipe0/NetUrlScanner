@@ -33,75 +33,7 @@
             .openPopup();
     }
 
-    const SCREENSHOT_WIDTH_FAST = 480;
-    const SCREENSHOT_WIDTH_HD = 720;
-    let screenshotRequestId = 0;
 
-    function buildScreenshotUrl(cleanUrl, width) {
-        return `https://s0.wp.com/mshots/v1/${encodeURIComponent(cleanUrl)}?w=${width}`;
-    }
-
-    function loadScreenshot(url, status) {
-        const img = document.getElementById('ajaxScreenshotImg');
-        const offline = document.getElementById('ajaxScreenshotOffline');
-        const loading = document.getElementById('ajaxScreenshotLoading');
-        const browserAddress = document.getElementById('ajaxBrowserAddress');
-
-        if (!img || !offline || !loading) return;
-
-        if (browserAddress) browserAddress.textContent = url;
-
-        const requestId = ++screenshotRequestId;
-        img.onload = null;
-        img.onerror = null;
-        img.removeAttribute('src');
-
-        loading.classList.remove('d-none');
-        img.classList.add('d-none');
-        offline.classList.add('d-none');
-
-        if (status === 'Offline') {
-            loading.classList.add('d-none');
-            offline.classList.remove('d-none');
-            return;
-        }
-
-        const cleanUrl = url.replace(/^(https?:\/\/)/i, '');
-
-        function showImage() {
-            if (requestId !== screenshotRequestId) return;
-            loading.classList.add('d-none');
-            img.classList.remove('d-none');
-        }
-
-        function showError() {
-            if (requestId !== screenshotRequestId) return;
-            loading.classList.add('d-none');
-            offline.classList.remove('d-none');
-        }
-
-        function loadWidth(width, onDone) {
-            img.onload = () => {
-                if (requestId !== screenshotRequestId) return;
-                showImage();
-                onDone?.();
-            };
-            img.onerror = showError;
-            img.src = buildScreenshotUrl(cleanUrl, width);
-        }
-
-        // Tải bản nhỏ trước để hiện nhanh, sau đó nâng chất lượng nếu còn đúng request
-        loadWidth(SCREENSHOT_WIDTH_FAST, () => {
-            if (requestId !== screenshotRequestId) return;
-            const hd = new Image();
-            hd.decoding = 'async';
-            hd.onload = () => {
-                if (requestId !== screenshotRequestId) return;
-                img.src = hd.src;
-            };
-            hd.src = buildScreenshotUrl(cleanUrl, SCREENSHOT_WIDTH_HD);
-        });
-    }
 
     function animateGauge(score, level) {
         const circle = document.getElementById('ajaxGaugeCircle');
@@ -332,7 +264,6 @@
                 ajaxResultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
                 animateGauge(data.riskScore, data.riskLevel);
-                loadScreenshot(data.url, data.status);
                 initAjaxMap(data.latitude, data.longitude, data.ipAddress, data.countryName);
                 prependToHistoryTable(data);
             }

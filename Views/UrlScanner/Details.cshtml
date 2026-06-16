@@ -153,54 +153,65 @@
         </div>
     </div>
 
-    <!-- Khung xem trước Website & Bản đồ máy chủ địa lý -->
+    <!-- Khung kết quả chi tiết & Bản đồ máy chủ địa lý -->
     <div class="row g-4 mb-4">
-        <!-- Cột trái: Ảnh chụp website (Browser Mockup) -->
-        <div class="col-lg-6">
+        <!-- Cột trái: Lý do đánh giá -->
+        <div id="detailsReasonsCol" class="col-lg-6 d-flex flex-column">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
-                    <h5 class="fw-bold mb-0 text-primary">Xem trước giao diện website</h5>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h5 class="fw-bold mb-0 text-primary">Lý do đánh giá</h5>
+                        <span class="badge @badgeClass fs-6 px-3 py-1">
+                            @Model.RiskScore điểm
+                        </span>
+                    </div>
                 </div>
                 <div class="card-body p-4 d-flex flex-column">
-                    <div class="browser-mockup mb-0">
-                        <div class="browser-header">
-                            <div class="browser-dots">
-                                <span class="browser-dot red"></span>
-                                <span class="browser-dot yellow"></span>
-                                <span class="browser-dot green"></span>
+                    <p class="text-muted small mb-3">Các dấu hiệu bất thường hoặc an toàn được phát hiện sau khi phân tích:</p>
+                    <div class="flex-grow-1 overflow-y-auto" style="max-height: 380px;">
+                        @if (reasons.Any())
+                        {
+                            <ul class="list-group list-group-flush mb-0">
+                                @foreach (var reason in reasons)
+                                {
+                                    bool isDangerReason =
+                                        reason.Contains("cá cược", StringComparison.OrdinalIgnoreCase)
+                                        || reason.Contains("cờ bạc", StringComparison.OrdinalIgnoreCase)
+                                        || reason.Contains("mất tài sản", StringComparison.OrdinalIgnoreCase)
+                                        || reason.Contains("lừa đảo", StringComparison.OrdinalIgnoreCase);
+
+                                    <li class="list-group-item d-flex align-items-start gap-2 px-0 bg-transparent py-2 border-0">
+                                        @if (isDangerReason)
+                                        {
+                                            <span class="badge bg-danger mt-1">!</span>
+                                        }
+                                        else if (Model.RiskLevel == "Safe")
+                                        {
+                                            <span class="badge bg-success mt-1">✓</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark mt-1">!</span>
+                                        }
+
+                                        <span>@reason</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <div class="text-muted text-center py-4">
+                                Không có lý do đánh giá được ghi nhận.
                             </div>
-                            <div class="browser-address">@Model.Url</div>
-                        </div>
-                        <div class="browser-body">
-                            @if (Model.Status == "Offline")
-                            {
-                                <div class="browser-offline-placeholder">
-                                    <i class="bi bi-cloud-slash fs-1 mb-2"></i>
-                                    <span class="fw-bold">Website không phản hồi</span>
-                                    <span class="small text-muted">Không thể tạo ảnh chụp màn hình xem trước.</span>
-                                </div>
-                            }
-                            else
-                            {
-                                string cleanUrl = Model.Url.Replace("http://", "", StringComparison.OrdinalIgnoreCase)
-                                                           .Replace("https://", "", StringComparison.OrdinalIgnoreCase);
-                                string screenshotUrl = $"https://s0.wp.com/mshots/v1/{System.Net.WebUtility.UrlEncode(cleanUrl)}?w=560";
-                                
-                                <img src="@screenshotUrl" alt="Live Preview" decoding="async" fetchpriority="high" onerror="this.style.display='none'; document.getElementById('detailsScreenshotError').classList.remove('d-none');" />
-                                <div id="detailsScreenshotError" class="browser-offline-placeholder d-none">
-                                    <i class="bi bi-exclamation-triangle fs-1 mb-2 text-warning"></i>
-                                    <span class="fw-bold">Lỗi tải ảnh xem trước</span>
-                                    <span class="small text-muted">Không thể kết nối dịch vụ screenshot.</span>
-                                </div>
-                            }
-                        </div>
+                        }
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Cột phải: Bản đồ máy chủ địa lý -->
-        <div class="col-lg-6">
+        <div id="detailsMapCol" class="col-lg-6 d-flex flex-column">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
                     <h5 class="fw-bold mb-0 text-primary">Bản đồ vị trí máy chủ</h5>
@@ -248,60 +259,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <div>
-                    <h5 class="fw-bold mb-1">Lý do đánh giá</h5>
-                    <p class="text-muted mb-0">
-                        Các rule được kích hoạt trong quá trình phân tích URL.
-                    </p>
-                </div>
-
-                <span class="badge @badgeClass">
-                    @Model.RiskScore điểm
-                </span>
-            </div>
-
-            @if (reasons.Any())
-            {
-                <ul class="list-group list-group-flush">
-                    @foreach (var reason in reasons)
-                    {
-                        bool isDangerReason =
-                            reason.Contains("cá cược", StringComparison.OrdinalIgnoreCase)
-                            || reason.Contains("cờ bạc", StringComparison.OrdinalIgnoreCase)
-                            || reason.Contains("mất tài sản", StringComparison.OrdinalIgnoreCase)
-                            || reason.Contains("lừa đảo", StringComparison.OrdinalIgnoreCase);
-
-                        <li class="list-group-item d-flex align-items-start gap-2 px-0">
-                            @if (isDangerReason)
-                            {
-                                <span class="badge bg-danger mt-1">!</span>
-                            }
-                            else if (Model.RiskLevel == "Safe")
-                            {
-                                <span class="badge bg-success mt-1">✓</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-warning text-dark mt-1">!</span>
-                            }
-
-                            <span>@reason</span>
-                        </li>
-                    }
-                </ul>
-            }
-            else
-            {
-                <div class="alert alert-secondary mb-0">
-                    Không có lý do đánh giá được ghi nhận.
-                </div>
-            }
         </div>
     </div>
 
@@ -420,13 +377,13 @@
                 });
             } else {
                 // Ẩn khối bản đồ nếu không phân giải được vị trí
-                const mapWrapper = document.getElementById('detailsMap')?.closest('.col-lg-6');
-                if (mapWrapper) {
-                    mapWrapper.classList.add('d-none');
-                    // Mở rộng khung screenshot chiếm trọn chiều rộng nếu không có bản đồ
-                    const previewWrapper = document.querySelector('.browser-mockup')?.closest('.col-lg-6');
-                    if (previewWrapper) {
-                        previewWrapper.className = 'col-12';
+                const mapCol = document.getElementById('detailsMapCol');
+                if (mapCol) {
+                    mapCol.classList.add('d-none');
+                    // Mở rộng khung lý do đánh giá chiếm trọn chiều rộng nếu không có bản đồ
+                    const reasonsCol = document.getElementById('detailsReasonsCol');
+                    if (reasonsCol) {
+                        reasonsCol.className = 'col-12';
                     }
                 }
             }

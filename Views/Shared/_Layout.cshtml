@@ -115,13 +115,16 @@
                             </li>
                         }
 
-                        <li class="nav-item">
-                            <a class="nav-link text-primary fw-semibold"
-                               href="/swagger"
-                               target="_blank">
-                                <i class="bi bi-file-earmark-code-fill me-1"></i>Swagger UI
-                            </a>
-                        </li>
+                        @if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-primary fw-semibold"
+                                   href="/swagger"
+                                   target="_blank">
+                                    <i class="bi bi-file-earmark-code-fill me-1"></i>Swagger UI
+                                </a>
+                            </li>
+                        }
                     </ul>
 
                     <!-- Nút đăng nhập/đăng ký & chuyển đổi Dark Mode -->
