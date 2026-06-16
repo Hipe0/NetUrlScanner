@@ -1,52 +1,109 @@
 @{
     ViewData["Title"] = "Đăng nhập";
+    var returnUrl = ViewBag.ReturnUrl as string ?? "/";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            <div class="card shadow-lg border-0 rounded-lg">
-                <div class="card-header bg-primary text-white text-center py-4">
-                    <h3 class="font-weight-light my-0"><i class="bi bi-box-arrow-in-right"></i> Đăng Nhập</h3>
-                </div>
-                <div class="card-body p-5">
-                    @if (TempData["Success"] != null)
-                    {
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            @TempData["Success"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    }
-                    @if (ViewBag.Error != null)
-                    {
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            @ViewBag.Error
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    }
-
-                    <form asp-action="Login" method="post">
-                        <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
-                        
-                        <div class="form-floating mb-3">
-                            <input class="form-control" id="inputEmail" type="email" name="email" placeholder="name@example.com" required />
-                            <label for="inputEmail">Địa chỉ Email</label>
-                        </div>
-                        <div class="form-floating mb-4">
-                            <input class="form-control" id="inputPassword" type="password" name="password" placeholder="Password" required />
-                            <label for="inputPassword">Mật khẩu</label>
-                        </div>
-                        
-                        <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
-                            <a class="small text-decoration-none" href="#">Quên mật khẩu?</a>
-                            <button class="btn btn-primary px-4 py-2" type="submit">Đăng nhập</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="card-footer text-center py-3 bg-light">
-                    <div class="small"><a asp-action="Register" class="text-decoration-none">Chưa có tài khoản? Đăng ký ngay!</a></div>
-                </div>
+<div class="auth-page">
+    <div class="auth-shell">
+        <aside class="auth-brand" aria-hidden="true">
+            <div class="auth-brand-logo">
+                <span class="logo-mark">N</span>
+                <span>NetURLScanner</span>
             </div>
-        </div>
+            <h1>Chào mừng trở lại</h1>
+            <p>Đăng nhập để xem lịch sử quét, xuất báo cáo PDF và quản lý hệ thống theo quyền của bạn.</p>
+            <ul class="auth-features">
+                <li><i class="bi bi-check-circle-fill"></i><span>User: lịch sử quét &amp; báo cáo chi tiết</span></li>
+                <li><i class="bi bi-check-circle-fill"></i><span>Manager: Whitelist &amp; Blacklist</span></li>
+                <li><i class="bi bi-check-circle-fill"></i><span>Admin: phân quyền &amp; Swagger API</span></li>
+            </ul>
+        </aside>
+
+        <section class="auth-panel">
+            <a asp-controller="Home" asp-action="Landing" class="auth-back-home">
+                <i class="bi bi-arrow-left"></i> Về trang chủ
+            </a>
+
+            <div class="auth-panel-header">
+                <h2>Đăng nhập</h2>
+                <p>Nhập email và mật khẩu để tiếp tục</p>
+            </div>
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success auth-alert alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+                </div>
+            }
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-danger auth-alert alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-1"></i> @ViewBag.Error
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+                </div>
+            }
+
+            <form asp-action="Login" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+
+                <div class="auth-field">
+                    <label for="inputEmail">Email</label>
+                    <div class="auth-input-wrap">
+                        <i class="bi bi-envelope field-icon" aria-hidden="true"></i>
+                        <input class="form-control"
+                               id="inputEmail"
+                               type="email"
+                               name="email"
+                               placeholder="vd: ban@email.com"
+                               autocomplete="email"
+                               required
+                               autofocus />
+                    </div>
+                </div>
+
+                <div class="auth-field">
+                    <label for="inputPassword">Mật khẩu</label>
+                    <div class="auth-input-wrap">
+                        <i class="bi bi-lock field-icon" aria-hidden="true"></i>
+                        <input class="form-control"
+                               id="inputPassword"
+                               type="password"
+                               name="password"
+                               placeholder="Nhập mật khẩu"
+                               autocomplete="current-password"
+                               required />
+                        <button type="button" class="auth-toggle-pw" data-target="inputPassword" aria-label="Hiện mật khẩu">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary auth-submit" type="submit">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập
+                </button>
+            </form>
+
+            <div class="auth-footer-link">
+                Chưa có tài khoản?
+                <a asp-action="Register">Đăng ký miễn phí</a>
+            </div>
+        </section>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.auth-toggle-pw').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const input = document.getElementById(btn.dataset.target);
+                if (!input) return;
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+                btn.querySelector('i').className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+                btn.setAttribute('aria-label', isPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+            });
+        });
+    </script>
+}

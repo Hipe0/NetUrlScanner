@@ -32,11 +32,15 @@ namespace NetURLScanner.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string email, string password, string returnUrl = "/")
         {
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            ViewBag.ReturnUrl = returnUrl;
+
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
                 ViewBag.Error = "Vui lòng nhập Email và Mật khẩu.";
                 return View();
             }
+
+            email = email.Trim();
 
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null)
@@ -91,9 +95,17 @@ namespace NetURLScanner.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(string email, string password, string confirmPassword)
         {
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
                 ViewBag.Error = "Vui lòng điền đầy đủ thông tin.";
+                return View();
+            }
+
+            email = email.Trim();
+
+            if (password.Length < 6)
+            {
+                ViewBag.Error = "Mật khẩu phải có ít nhất 6 ký tự.";
                 return View();
             }
 

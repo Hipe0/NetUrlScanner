@@ -2,45 +2,137 @@
     ViewData["Title"] = "Đăng ký";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            <div class="card shadow-lg border-0 rounded-lg">
-                <div class="card-header bg-success text-white text-center py-4">
-                    <h3 class="font-weight-light my-0"><i class="bi bi-person-plus"></i> Đăng Ký Tài Khoản</h3>
-                </div>
-                <div class="card-body p-5">
-                    @if (ViewBag.Error != null)
-                    {
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            @ViewBag.Error
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    }
-
-                    <form asp-action="Register" method="post">
-                        <div class="form-floating mb-3">
-                            <input class="form-control" id="inputEmail" type="email" name="email" placeholder="name@example.com" required />
-                            <label for="inputEmail">Địa chỉ Email</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <input class="form-control" id="inputPassword" type="password" name="password" placeholder="Mật khẩu" required />
-                            <label for="inputPassword">Mật khẩu</label>
-                        </div>
-                        <div class="form-floating mb-4">
-                            <input class="form-control" id="inputConfirmPassword" type="password" name="confirmPassword" placeholder="Xác nhận mật khẩu" required />
-                            <label for="inputConfirmPassword">Xác nhận mật khẩu</label>
-                        </div>
-                        
-                        <div class="d-flex align-items-center justify-content-center mt-4 mb-0">
-                            <button class="btn btn-success px-5 py-2 w-100" type="submit">Đăng Ký</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="card-footer text-center py-3 bg-light">
-                    <div class="small"><a asp-action="Login" class="text-decoration-none">Đã có tài khoản? Quay lại đăng nhập</a></div>
-                </div>
+<div class="auth-page">
+    <div class="auth-shell">
+        <aside class="auth-brand" aria-hidden="true">
+            <div class="auth-brand-logo">
+                <span class="logo-mark">N</span>
+                <span>NetURLScanner</span>
             </div>
-        </div>
+            <h1>Tạo tài khoản mới</h1>
+            <p>Tham gia để lưu lịch sử quét URL, theo dõi mức rủi ro và truy cập báo cáo phân tích đầy đủ.</p>
+            <ul class="auth-features">
+                <li><i class="bi bi-shield-check"></i><span>Quét URL &amp; chấm điểm rủi ro miễn phí</span></li>
+                <li><i class="bi bi-clock-history"></i><span>Lưu lịch sử và xem chi tiết từng lượt quét</span></li>
+                <li><i class="bi bi-person-badge"></i><span>Tài khoản mới mặc định quyền <strong>User</strong></span></li>
+            </ul>
+        </aside>
+
+        <section class="auth-panel">
+            <a asp-action="Login" class="auth-back-home">
+                <i class="bi bi-arrow-left"></i> Đã có tài khoản? Đăng nhập
+            </a>
+
+            <div class="auth-panel-header">
+                <h2>Đăng ký</h2>
+                <p>Điền thông tin bên dưới — chỉ mất vài giây</p>
+            </div>
+
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-danger auth-alert alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-1"></i> @ViewBag.Error
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+                </div>
+            }
+
+            <form asp-action="Register" method="post" novalidate>
+                @Html.AntiForgeryToken()
+
+                <div class="auth-field">
+                    <label for="inputEmail">Email</label>
+                    <div class="auth-input-wrap">
+                        <i class="bi bi-envelope field-icon" aria-hidden="true"></i>
+                        <input class="form-control"
+                               id="inputEmail"
+                               type="email"
+                               name="email"
+                               placeholder="vd: ban@email.com"
+                               autocomplete="email"
+                               required
+                               autofocus />
+                    </div>
+                </div>
+
+                <div class="auth-field">
+                    <label for="inputPassword">Mật khẩu</label>
+                    <div class="auth-input-wrap">
+                        <i class="bi bi-lock field-icon" aria-hidden="true"></i>
+                        <input class="form-control"
+                               id="inputPassword"
+                               type="password"
+                               name="password"
+                               placeholder="Tối thiểu 6 ký tự"
+                               autocomplete="new-password"
+                               minlength="6"
+                               required />
+                        <button type="button" class="auth-toggle-pw" data-target="inputPassword" aria-label="Hiện mật khẩu">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <div class="auth-hint">Nên dùng chữ hoa, số và ký tự đặc biệt để an toàn hơn.</div>
+                </div>
+
+                <div class="auth-field">
+                    <label for="inputConfirmPassword">Xác nhận mật khẩu</label>
+                    <div class="auth-input-wrap">
+                        <i class="bi bi-shield-lock field-icon" aria-hidden="true"></i>
+                        <input class="form-control"
+                               id="inputConfirmPassword"
+                               type="password"
+                               name="confirmPassword"
+                               placeholder="Nhập lại mật khẩu"
+                               autocomplete="new-password"
+                               minlength="6"
+                               required />
+                        <button type="button" class="auth-toggle-pw" data-target="inputConfirmPassword" aria-label="Hiện mật khẩu">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn btn-success auth-submit" type="submit">
+                    <i class="bi bi-person-plus me-1"></i> Tạo tài khoản
+                </button>
+            </form>
+
+            <div class="auth-footer-link">
+                Bằng việc đăng ký, bạn đồng ý sử dụng hệ thống cho mục đích kiểm tra URL hợp pháp.
+            </div>
+        </section>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.auth-toggle-pw').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const input = document.getElementById(btn.dataset.target);
+                if (!input) return;
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+                btn.querySelector('i').className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+                btn.setAttribute('aria-label', isPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+            });
+        });
+
+        const pw = document.getElementById('inputPassword');
+        const confirmPw = document.getElementById('inputConfirmPassword');
+        const form = pw?.closest('form');
+
+        form?.addEventListener('submit', e => {
+            if (pw.value.length < 6) {
+                e.preventDefault();
+                alert('Mật khẩu phải có ít nhất 6 ký tự.');
+                return;
+            }
+            if (pw.value !== confirmPw.value) {
+                e.preventDefault();
+                confirmPw.setCustomValidity('Mật khẩu xác nhận không khớp.');
+                confirmPw.reportValidity();
+            }
+        });
+
+        confirmPw?.addEventListener('input', () => confirmPw.setCustomValidity(''));
+    </script>
+}

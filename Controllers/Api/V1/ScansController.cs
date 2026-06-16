@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
@@ -27,6 +28,7 @@ public class ScansController : ControllerBase
 
     /// <summary>Quét và phân loại rủi ro một URL.</summary>
     [HttpPost]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<ScanUrlResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Scan([FromBody] ScanUrlRequest request, CancellationToken cancellationToken)
@@ -60,6 +62,7 @@ public class ScansController : ControllerBase
 
     /// <summary>Lấy danh sách lịch sử quét (có phân trang và lọc).</summary>
     [HttpGet]
+    [Authorize(Roles = "Admin,Manager,User")]
     [ProducesResponseType(typeof(ApiResponse<List<ScanUrlResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? search,
@@ -108,6 +111,7 @@ public class ScansController : ControllerBase
 
     /// <summary>Thống kê tổng quan lịch sử quét.</summary>
     [HttpGet("stats")]
+    [Authorize(Roles = "Admin,Manager,User")]
     [ProducesResponseType(typeof(ApiResponse<ScanStatsResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStats(CancellationToken cancellationToken)
     {
@@ -126,6 +130,7 @@ public class ScansController : ControllerBase
 
     /// <summary>Lấy chi tiết một lượt quét theo ID.</summary>
     [HttpGet("{id:int}")]
+    [Authorize(Roles = "Admin,Manager,User")]
     [ProducesResponseType(typeof(ApiResponse<ScanUrlResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
@@ -142,6 +147,7 @@ public class ScansController : ControllerBase
 
     /// <summary>Xóa một kết quả quét khỏi lịch sử.</summary>
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin,Manager,User")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)

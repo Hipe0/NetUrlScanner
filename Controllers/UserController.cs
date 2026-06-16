@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
+using NetURLScanner.Services;
 
 namespace NetURLScanner.Controllers
 {
@@ -9,16 +10,19 @@ namespace NetURLScanner.Controllers
     public class UserController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly AdminSeedService _adminSeed;
 
-        public UserController(ApplicationDbContext context)
+        public UserController(ApplicationDbContext context, AdminSeedService adminSeed)
         {
             _context = context;
+            _adminSeed = adminSeed;
         }
 
         // GET: Hiển thị danh sách người dùng để phân quyền
         public async Task<IActionResult> Index()
         {
             var users = await _context.Users.ToListAsync();
+            ViewBag.ProtectedAdminEmail = _adminSeed.ProtectedAdminEmail;
             return View(users);
         }
 
@@ -34,8 +38,7 @@ namespace NetURLScanner.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Không cho phép Admin tự đổi quyền của chính mình (admin123@gmail.com)
-            if (user.Email == "admin123@gmail.com")
+            if (_adminSeed.IsProtectedAdmin(user.Email))
             {
                 TempData["Error"] = "Không thể thay đổi quyền của tài khoản Admin gốc.";
                 return RedirectToAction(nameof(Index));

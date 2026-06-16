@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
@@ -18,6 +19,7 @@ namespace NetURLScanner.Controllers.Api
 
         // GET: api/trusted-brands
         [HttpGet]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> GetAll()
         {
             var brands = await _context.TrustedBrands
@@ -30,6 +32,7 @@ namespace NetURLScanner.Controllers.Api
 
         // GET: api/trusted-brands/{id}
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> GetById(int id)
         {
             var brand = await _context.TrustedBrands.FindAsync(id);
@@ -44,6 +47,7 @@ namespace NetURLScanner.Controllers.Api
 
         // POST: api/trusted-brands
         [HttpPost]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Create([FromBody] TrustedBrand brand)
         {
             if (brand == null)
@@ -78,6 +82,7 @@ namespace NetURLScanner.Controllers.Api
 
         // PUT: api/trusted-brands/{id}
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Update(int id, [FromBody] TrustedBrand updatedBrand)
         {
             if (updatedBrand == null)
@@ -118,6 +123,7 @@ namespace NetURLScanner.Controllers.Api
 
         // DELETE: api/trusted-brands/{id}
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Delete(int id)
         {
             var brand = await _context.TrustedBrands.FindAsync(id);

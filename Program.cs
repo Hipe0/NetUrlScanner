@@ -1,10 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using NetURLScanner.Data;
+using NetURLScanner.Options;
 using NetURLScanner.Services;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<AdminSeedOptions>(
+    builder.Configuration.GetSection(AdminSeedOptions.SectionName));
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddControllers();
@@ -33,7 +37,6 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Cấu hình Cookie Authentication
 builder.Services.AddAuthentication("Cookies")
     .AddCookie("Cookies", options =>
     {
@@ -42,8 +45,7 @@ builder.Services.AddAuthentication("Cookies")
     });
 
 builder.Services.AddScoped<UrlScannerService>();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<AdminSeedService>();
 
 var app = builder.Build();
 
@@ -109,19 +111,8 @@ _ = Task.Run(async () =>
         _ = await db.TrustedBrands.AnyAsync();
         _ = await db.BlacklistedDomains.AnyAsync();
 
-        // Khởi tạo tài khoản Admin mặc định
-        if (!await db.Users.AnyAsync(u => u.Email == "admin123@gmail.com"))
-        {
-            var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<NetURLScanner.Models.User>();
-            var adminUser = new NetURLScanner.Models.User
-            {
-                Email = "admin123@gmail.com",
-                Role = "Admin"
-            };
-            adminUser.PasswordHash = hasher.HashPassword(adminUser, "admin123");
-            db.Users.Add(adminUser);
-            await db.SaveChangesAsync();
-        }
+        var adminSeed = scope.ServiceProvider.GetRequiredService<AdminSeedService>();
+        await adminSeed.SeedAsync();
 
         using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
         _ = await client.GetAsync("http://ip-api.com/json/8.8.8.8");

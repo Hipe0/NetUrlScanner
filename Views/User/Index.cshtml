@@ -39,7 +39,7 @@
                                 }
                             </td>
                             <td>
-                                @if (item.Email != "admin123@gmail.com")
+                                @if (item.Email != ViewBag.ProtectedAdminEmail as string)
                                 {
                                     <form asp-action="ChangeRole" method="post" class="d-flex align-items-center gap-2">
                                         <input type="hidden" name="id" value="@item.Id" />

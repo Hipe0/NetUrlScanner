@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
@@ -21,6 +22,7 @@ namespace NetURLScanner.Controllers.Api
 
         // GET: api/scans
         [HttpGet]
+        [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> GetAll()
         {
             var scans = await _context.UrlScans
@@ -61,6 +63,7 @@ namespace NetURLScanner.Controllers.Api
 
         // GET: api/scans/{id}
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> GetById(int id)
         {
             var scan = await _context.UrlScans.FindAsync(id);
@@ -102,8 +105,9 @@ namespace NetURLScanner.Controllers.Api
             return Ok(response);
         }
 
-        // POST: api/scans
+        // POST: api/scans — cho phép khách quét URL (giống trang /Scan)
         [HttpPost]
+        [AllowAnonymous]
         public async Task<IActionResult> Create([FromBody] ScanRequest request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.Url))
@@ -149,14 +153,15 @@ namespace NetURLScanner.Controllers.Api
 
                 return CreatedAtAction(nameof(GetById), new { id = result.Id }, response);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { message = "Đã xảy ra lỗi hệ thống: " + ex.Message });
+                return StatusCode(500, new { message = "Đã xảy ra lỗi hệ thống khi quét URL." });
             }
         }
 
         // DELETE: api/scans/{id}
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> Delete(int id)
         {
             var scan = await _context.UrlScans.FindAsync(id);

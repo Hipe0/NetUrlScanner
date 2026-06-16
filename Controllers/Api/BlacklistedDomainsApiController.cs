@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
@@ -18,6 +19,7 @@ namespace NetURLScanner.Controllers.Api
 
         // GET: api/blacklisted-domains
         [HttpGet]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> GetAll()
         {
             var domains = await _context.BlacklistedDomains
@@ -30,6 +32,7 @@ namespace NetURLScanner.Controllers.Api
 
         // GET: api/blacklisted-domains/{id}
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> GetById(int id)
         {
             var domain = await _context.BlacklistedDomains.FindAsync(id);
@@ -44,6 +47,7 @@ namespace NetURLScanner.Controllers.Api
 
         // POST: api/blacklisted-domains
         [HttpPost]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Create([FromBody] BlacklistedDomain domain)
         {
             if (domain == null)
@@ -78,6 +82,7 @@ namespace NetURLScanner.Controllers.Api
 
         // PUT: api/blacklisted-domains/{id}
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Update(int id, [FromBody] BlacklistedDomain updatedDomain)
         {
             if (updatedDomain == null)
@@ -119,6 +124,7 @@ namespace NetURLScanner.Controllers.Api
 
         // DELETE: api/blacklisted-domains/{id}
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Delete(int id)
         {
             var domain = await _context.BlacklistedDomains.FindAsync(id);
