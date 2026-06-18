@@ -45,6 +45,12 @@ public class ScansController : ControllerBase
 
             if (request.SaveToHistory)
             {
+                var currentUserId = GetCurrentUserId();
+                if (currentUserId != null)
+                {
+                    result.UserId = currentUserId;
+                }
+
                 _context.UrlScans.Add(result);
                 await _context.SaveChangesAsync(cancellationToken);
             }
@@ -76,6 +82,13 @@ public class ScansController : ControllerBase
         pageSize = Math.Clamp(pageSize, 1, 50);
 
         var query = _context.UrlScans.AsNoTracking().AsQueryable();
+
+        var currentUserId = GetCurrentUserId();
+        var isAdmin = User.IsInRole("Admin") || User.IsInRole("Manager");
+        if (!isAdmin)
+        {
+            query = query.Where(x => x.UserId == currentUserId);
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(x => x.Url.Contains(search));
@@ -115,14 +128,23 @@ public class ScansController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ScanStatsResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStats(CancellationToken cancellationToken)
     {
+        var currentUserId = GetCurrentUserId();
+        var isAdmin = User.IsInRole("Admin") || User.IsInRole("Manager");
+        
+        var query = _context.UrlScans.AsQueryable();
+        if (!isAdmin)
+        {
+            query = query.Where(x => x.UserId == currentUserId);
+        }
+
         var stats = new ScanStatsResponse
         {
-            TotalScans = await _context.UrlScans.CountAsync(cancellationToken),
-            SafeCount = await _context.UrlScans.CountAsync(x => x.RiskLevel == "Safe", cancellationToken),
-            WarningCount = await _context.UrlScans.CountAsync(x => x.RiskLevel == "Warning", cancellationToken),
-            SuspiciousCount = await _context.UrlScans.CountAsync(x => x.RiskLevel == "Suspicious", cancellationToken),
-            OnlineCount = await _context.UrlScans.CountAsync(x => x.Status == "Online", cancellationToken),
-            OfflineCount = await _context.UrlScans.CountAsync(x => x.Status == "Offline", cancellationToken)
+            TotalScans = await query.CountAsync(cancellationToken),
+            SafeCount = await query.CountAsync(x => x.RiskLevel == "Safe", cancellationToken),
+            WarningCount = await query.CountAsync(x => x.RiskLevel == "Warning", cancellationToken),
+            SuspiciousCount = await query.CountAsync(x => x.RiskLevel == "Suspicious", cancellationToken),
+            OnlineCount = await query.CountAsync(x => x.Status == "Online", cancellationToken),
+            OfflineCount = await query.CountAsync(x => x.Status == "Offline", cancellationToken)
         };
 
         return Ok(ApiResponse<ScanStatsResponse>.Ok(stats, "Lấy thống kê thành công."));
@@ -142,6 +164,13 @@ public class ScansController : ControllerBase
             return NotFound(ApiResponse<object>.Fail($"Không tìm thấy kết quả quét với ID {id}."));
         }
 
+        var currentUserId = GetCurrentUserId();
+        var isAdmin = User.IsInRole("Admin") || User.IsInRole("Manager");
+        if (!isAdmin && scan.UserId != currentUserId)
+        {
+            return Forbid();
+        }
+
         return Ok(ApiResponse<ScanUrlResponse>.Ok(ScanDtoMapper.ToResponse(scan), "Lấy chi tiết thành công."));
     }
 
@@ -159,9 +188,26 @@ public class ScansController : ControllerBase
             return NotFound(ApiResponse<object>.Fail($"Không tìm thấy kết quả quét với ID {id}."));
         }
 
+        var currentUserId = GetCurrentUserId();
+        var isAdmin = User.IsInRole("Admin") || User.IsInRole("Manager");
+        if (!isAdmin && scan.UserId != currentUserId)
+        {
+            return Forbid();
+        }
+
         _context.UrlScans.Remove(scan);
         await _context.SaveChangesAsync(cancellationToken);
 
         return Ok(ApiResponse<object>.Ok(null!, "Đã xóa kết quả quét."));
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+        {
+            return userId;
+        }
+        return null;
     }
 }
