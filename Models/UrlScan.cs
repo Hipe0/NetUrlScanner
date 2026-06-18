@@ -31,5 +31,8 @@ namespace NetURLScanner.Models
         public double? Longitude { get; set; }
 
         public DateTime ScannedAt { get; set; } = DateTime.Now;
+
+        public int? UserId { get; set; }
+        public User? User { get; set; }
     }
 }

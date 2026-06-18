@@ -1,19 +1,19 @@
 @model List<NetURLScanner.Models.UrlScan>
 
 @{
-    ViewData["Title"] = "Lịch sử quét URL";
+    ViewData["Title"] = $"Lịch sử quét của {ViewBag.UserEmail}";
 }
 
 <div class="container mt-4">
     @Html.AntiForgeryToken()
     <div class="mb-4">
-        <h2 class="fw-bold">Lịch sử quét URL</h2>
-        <p class="text-muted mb-3">
-            Danh sách toàn bộ các URL đã được quét và đánh giá rủi ro.
-        </p>
+        <h2 class="fw-bold">Lịch sử quét của người dùng</h2>
+        <h5 class="text-muted mb-3">
+            Tài khoản: <span class="text-primary">@ViewBag.UserEmail</span>
+        </h5>
 
         <a asp-action="Index" class="btn btn-secondary">
-            Quay lại trang quét
+            Quay lại quản lý người dùng
         </a>
     </div>
 
@@ -22,7 +22,8 @@
             <div class="card shadow-sm border-0 h-100 bg-body-tertiary">
                 <div class="card-body">
                     <h5 class="fw-bold mb-3">Bộ lọc & Tìm kiếm</h5>
-                    <form asp-action="History" method="get" class="row g-3">
+                    <form asp-action="UserScans" method="get" class="row g-3">
+                        <input type="hidden" name="id" value="@ViewBag.UserId" />
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Tìm kiếm URL</label>
                             <input type="text" name="search" class="form-control" placeholder="Nhập domain hoặc từ khóa..." value="@ViewBag.Search" />
@@ -56,7 +57,7 @@
                             </button>
                             @if (!string.IsNullOrEmpty(ViewBag.Search) || !string.IsNullOrEmpty(ViewBag.Status) || !string.IsNullOrEmpty(ViewBag.RiskLevel))
                             {
-                                <a asp-action="History" class="btn btn-outline-secondary ms-2">Xóa</a>
+                                <a asp-action="UserScans" asp-route-id="@ViewBag.UserId" class="btn btn-outline-secondary ms-2">Xóa</a>
                             }
                         </div>
                     </form>
@@ -73,8 +74,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
         </div>
     </div>
 
@@ -96,68 +95,77 @@
                     </thead>
 
                     <tbody>
-                        @foreach (var item in Model)
+                        @if (Model.Count == 0)
                         {
-                            string badgeClass = item.RiskLevel switch
-                            {
-                                "Safe" => "bg-success",
-                                "Warning" => "bg-warning text-dark",
-                                "Suspicious" => "bg-danger",
-                                _ => "bg-secondary"
-                            };
-
-                            string statusClass = item.Status switch
-                            {
-                                "Online" => "text-success fw-semibold",
-                                "Redirect" => "text-primary fw-semibold",
-                                "Client Error" => "text-warning fw-semibold",
-                                "Server Error" => "text-danger fw-semibold",
-                                "Offline" => "text-danger fw-semibold",
-                                _ => "text-muted"
-                            };
-
                             <tr>
-                                <td class="url-cell">
-                                    @item.Url
-                                </td>
-
-                                <td class="text-center @statusClass">
-                                    @item.Status
-                                </td>
-
-                                <td class="text-center">
-                                    @(item.StatusCode?.ToString() ?? "-")
-                                </td>
-
-                                <td class="text-center">
-                                    @item.ResponseTimeMs ms
-                                </td>
-
-                                <td class="text-center">
-                                    <span class="badge @badgeClass">
-                                        @item.RiskLevel
-                                    </span>
-                                </td>
-
-                                <td class="text-center fw-semibold">
-                                    @item.RiskScore
-                                </td>
-
-                                <td class="text-center scanned-col">
-                                    @item.ScannedAt.ToString("dd/MM/yyyy HH:mm:ss")
-                                </td>
-
-                                <td class="text-center action-col">
-                                    <div class="d-flex justify-content-center gap-1">
-                                        <button class="btn btn-sm btn-outline-primary btn-details" data-id="@item.Id">
-                                            <i class="bi bi-info-circle"></i> Chi tiết
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger btn-delete" data-id="@item.Id">
-                                            <i class="bi bi-trash"></i> Xóa
-                                        </button>
-                                    </div>
-                                </td>
+                                <td colspan="8" class="text-center py-4 text-muted">Người dùng này chưa thực hiện lượt quét nào.</td>
                             </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model)
+                            {
+                                string badgeClass = item.RiskLevel switch
+                                {
+                                    "Safe" => "bg-success",
+                                    "Warning" => "bg-warning text-dark",
+                                    "Suspicious" => "bg-danger",
+                                    _ => "bg-secondary"
+                                };
+
+                                string statusClass = item.Status switch
+                                {
+                                    "Online" => "text-success fw-semibold",
+                                    "Redirect" => "text-primary fw-semibold",
+                                    "Client Error" => "text-warning fw-semibold",
+                                    "Server Error" => "text-danger fw-semibold",
+                                    "Offline" => "text-danger fw-semibold",
+                                    _ => "text-muted"
+                                };
+
+                                <tr>
+                                    <td class="url-cell">
+                                        @item.Url
+                                    </td>
+
+                                    <td class="text-center @statusClass">
+                                        @item.Status
+                                    </td>
+
+                                    <td class="text-center">
+                                        @(item.StatusCode?.ToString() ?? "-")
+                                    </td>
+
+                                    <td class="text-center">
+                                        @item.ResponseTimeMs ms
+                                    </td>
+
+                                    <td class="text-center">
+                                        <span class="badge @badgeClass">
+                                            @item.RiskLevel
+                                        </span>
+                                    </td>
+
+                                    <td class="text-center fw-semibold">
+                                        @item.RiskScore
+                                    </td>
+
+                                    <td class="text-center scanned-col">
+                                        @item.ScannedAt.ToString("dd/MM/yyyy HH:mm:ss")
+                                    </td>
+
+                                    <td class="text-center action-col">
+                                        <div class="d-flex justify-content-center gap-1">
+                                            <button class="btn btn-sm btn-outline-primary btn-details" data-id="@item.Id">
+                                                <i class="bi bi-info-circle"></i> Chi tiết
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger btn-delete" data-id="@item.Id">
+                                                <i class="bi bi-trash"></i> Xóa
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
                         }
                     </tbody>
                 </table>
@@ -170,18 +178,18 @@
         <nav aria-label="Page navigation" class="mt-4">
             <ul class="pagination justify-content-center">
                 <li class="page-item @(ViewBag.CurrentPage <= 1 ? "disabled" : "")">
-                    <a class="page-link" href="?search=@ViewBag.Search&status=@ViewBag.Status&riskLevel=@ViewBag.RiskLevel&page=@(ViewBag.CurrentPage - 1)">Trước</a>
+                    <a class="page-link" href="?id=@ViewBag.UserId&search=@ViewBag.Search&status=@ViewBag.Status&riskLevel=@ViewBag.RiskLevel&page=@(ViewBag.CurrentPage - 1)">Trước</a>
                 </li>
                 
                 @for (int i = 1; i <= ViewBag.TotalPages; i++)
                 {
                     <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
-                        <a class="page-link" href="?search=@ViewBag.Search&status=@ViewBag.Status&riskLevel=@ViewBag.RiskLevel&page=@i">@i</a>
+                        <a class="page-link" href="?id=@ViewBag.UserId&search=@ViewBag.Search&status=@ViewBag.Status&riskLevel=@ViewBag.RiskLevel&page=@i">@i</a>
                     </li>
                 }
 
                 <li class="page-item @(ViewBag.CurrentPage >= ViewBag.TotalPages ? "disabled" : "")">
-                    <a class="page-link" href="?search=@ViewBag.Search&status=@ViewBag.Status&riskLevel=@ViewBag.RiskLevel&page=@(ViewBag.CurrentPage + 1)">Sau</a>
+                    <a class="page-link" href="?id=@ViewBag.UserId&search=@ViewBag.Search&status=@ViewBag.Status&riskLevel=@ViewBag.RiskLevel&page=@(ViewBag.CurrentPage + 1)">Sau</a>
                 </li>
             </ul>
         </nav>
@@ -213,7 +221,6 @@
     </div>
 </div>
 
-
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -225,7 +232,6 @@
             var suspiciousCount = @(ViewBag.SuspiciousCount ?? 0);
             
             if (safeCount === 0 && warningCount === 0 && suspiciousCount === 0) {
-                // Hiển thị biểu đồ trống nếu không có dữ liệu
                 safeCount = 1;
             }
 
@@ -270,16 +276,12 @@
                     const scanId = this.getAttribute('data-id');
                     const contentDiv = document.getElementById('scanDetailsContent');
                     
-                    // Hiện loading
                     contentDiv.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Đang tải...</span></div></div>';
                     
-                    // Đặt link xuất PDF
                     document.getElementById('btnExportPdf').href = '/Scan/ExportPdf/' + scanId;
                     
-                    // Hiển thị modal
                     detailsModal.show();
                     
-                    // Gọi AJAX lấy HTML partial view
                     fetch('/Scan/DetailsPartial/' + scanId)
                         .then(response => {
                             if (!response.ok) throw new Error("Lỗi tải dữ liệu");
@@ -302,7 +304,6 @@
                     const scanId = this.getAttribute('data-id');
                     const row = this.closest('tr');
                     
-                    // Lấy token chống giả mạo
                     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
                     
                     const formData = new FormData();
@@ -315,9 +316,7 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            // Hiện Toast xanh
                             window.showToast(data.message, 'success');
-                            // Xóa dòng khỏi bảng hiệu ứng mượt
                             row.style.transition = "all 0.4s";
                             row.style.opacity = "0";
                             setTimeout(() => row.remove(), 400);

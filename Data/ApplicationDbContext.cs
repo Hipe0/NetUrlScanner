@@ -18,6 +18,8 @@ namespace NetURLScanner.Data
 
         public DbSet<User> Users { get; set; }
 
+        public DbSet<ScamReport> ScamReports { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

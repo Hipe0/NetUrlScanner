@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
 using NetURLScanner.Services;
 using Microsoft.AspNetCore.Authorization;
+using NetURLScanner.Models;
 
 namespace NetURLScanner.Controllers
 {
@@ -20,18 +21,30 @@ namespace NetURLScanner.Controllers
             _scannerService = scannerService;
         }
 
+        /// <summary>
+        /// Trang chủ giao diện quét URL: hiển thị 20 kết quả quét gần đây nhất.
+        /// </summary>
         [HttpGet("")]
         public async Task<IActionResult> Index()
         {
-            var scans = await _context.UrlScans
-                .AsNoTracking()
-                .OrderByDescending(x => x.ScannedAt)
-                .Take(20)
-                .ToListAsync();
+            List<UrlScan> scans = new List<UrlScan>();
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId != null)
+            {
+                scans = await _context.UrlScans
+                    .Where(x => x.UserId == currentUserId)
+                    .AsNoTracking()
+                    .OrderByDescending(x => x.ScannedAt)
+                    .Take(20)
+                    .ToListAsync();
+            }
 
             return View(scans);
         }
 
+        /// <summary>
+        /// API xử lý quét URL gửi từ Client qua Ajax, ghi nhận kết quả vào cơ sở dữ liệu.
+        /// </summary>
         [HttpPost("/Scan/ScanAjax")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ScanAjax(string url)
@@ -45,11 +58,17 @@ namespace NetURLScanner.Controllers
             {
                 var result = await _scannerService.ScanAsync(url);
 
-                _context.UrlScans.Add(result);
-                await _context.SaveChangesAsync();
+                var currentUserId = GetCurrentUserId();
+                if (currentUserId != null)
+                {
+                    result.UserId = currentUserId;
+                    _context.UrlScans.Add(result);
+                    await _context.SaveChangesAsync();
+                }
 
+                // Chuyển đổi chuỗi lý do phân tách bằng dấu chấm phẩy sang danh sách mảng gọn gàng để trả về Client.
                 var reasonsList = string.IsNullOrWhiteSpace(result.Reasons)
-                    ? new List<string>()
+                    ? []
                     : result.Reasons
                         .Split(';', StringSplitOptions.RemoveEmptyEntries)
                         .Select(x => x.Trim())
@@ -88,39 +107,68 @@ namespace NetURLScanner.Controllers
             }
         }
 
+        /// <summary>
+        /// Trang chi tiết đầy đủ của một lượt quét.
+        /// </summary>
         [HttpGet("Details/{id}")]
         [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> Details(int id)
         {
             var scan = await _context.UrlScans.FindAsync(id);
-
             if (scan == null)
             {
                 return NotFound();
+            }
+
+            var currentUserId = GetCurrentUserId();
+            var isAdmin = User.IsInRole("Admin");
+            if (!isAdmin && scan.UserId != currentUserId)
+            {
+                return RedirectToAction("AccessDenied", "Account");
             }
 
             return View(scan);
         }
 
+        /// <summary>
+        /// Lấy phần giao diện Partial View thông tin chi tiết lượt quét phục vụ hiển thị Modal trên frontend.
+        /// </summary>
         [HttpGet("DetailsPartial/{id}")]
         [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> DetailsPartial(int id)
         {
             var scan = await _context.UrlScans.FindAsync(id);
-
             if (scan == null)
             {
                 return NotFound();
             }
 
+            var currentUserId = GetCurrentUserId();
+            var isAdmin = User.IsInRole("Admin");
+            if (!isAdmin && scan.UserId != currentUserId)
+            {
+                return Forbid();
+            }
+
             return PartialView("_ScanDetails", scan);
         }
 
+        /// <summary>
+        /// Trang lịch sử tìm kiếm, lọc trạng thái, lọc mức độ rủi ro và thống kê số lượng tổng quan kèm phân trang.
+        /// </summary>
         [HttpGet("~/History")]
         [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> History(string search, string status, string riskLevel, int page = 1)
         {
+            var currentUserId = GetCurrentUserId();
+            var isAdmin = User.IsInRole("Admin");
+
             var query = _context.UrlScans.AsNoTracking().AsQueryable();
+
+            if (!isAdmin)
+            {
+                query = query.Where(x => x.UserId == currentUserId);
+            }
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -137,12 +185,12 @@ namespace NetURLScanner.Controllers
                 query = query.Where(x => x.RiskLevel == riskLevel);
             }
 
-            // Dữ liệu biểu đồ thống kê
+            // Lấy dữ liệu đếm cho biểu đồ thống kê
             ViewBag.SafeCount = await query.CountAsync(x => x.RiskLevel == "Safe");
             ViewBag.WarningCount = await query.CountAsync(x => x.RiskLevel == "Warning");
             ViewBag.SuspiciousCount = await query.CountAsync(x => x.RiskLevel == "Suspicious");
 
-            // Phân trang
+            // Xử lý phân trang đầu ra
             int pageSize = 10;
             var totalItems = await query.CountAsync();
             var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
@@ -166,16 +214,25 @@ namespace NetURLScanner.Controllers
             return View(scans);
         }
 
+        /// <summary>
+        /// Xóa một lượt quét đã lưu trong hệ thống lịch sử.
+        /// </summary>
         [HttpPost("/Scan/Delete/{id}")]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> Delete(int id)
         {
             var scan = await _context.UrlScans.FindAsync(id);
-
             if (scan == null)
             {
                 return Json(new { success = false, message = "Không tìm thấy kết quả quét." });
+            }
+
+            var currentUserId = GetCurrentUserId();
+            var isAdmin = User.IsInRole("Admin");
+            if (!isAdmin && scan.UserId != currentUserId)
+            {
+                return Json(new { success = false, message = "Bạn không có quyền xóa kết quả quét này." });
             }
 
             _context.UrlScans.Remove(scan);
@@ -184,6 +241,9 @@ namespace NetURLScanner.Controllers
             return Json(new { success = true, message = "Đã xóa thành công" });
         }
 
+        /// <summary>
+        /// Kết xuất báo cáo kết quả quét dưới dạng tệp tin PDF hỗ trợ Unicode tiếng Việt đầy đủ.
+        /// </summary>
         [HttpGet("/Scan/ExportPdf/{id}")]
         [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> ExportPdf(int id)
@@ -194,12 +254,19 @@ namespace NetURLScanner.Controllers
                 return NotFound("Không tìm thấy kết quả quét.");
             }
 
+            var currentUserId = GetCurrentUserId();
+            var isAdmin = User.IsInRole("Admin");
+            if (!isAdmin && scan.UserId != currentUserId)
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
             using var stream = new MemoryStream();
             using var writer = new iText.Kernel.Pdf.PdfWriter(stream);
             using var pdf = new iText.Kernel.Pdf.PdfDocument(writer);
             using var document = new iText.Layout.Document(pdf);
 
-            // Sử dụng font Arial của Windows với mã hóa Unicode (IDENTITY_H) để hỗ trợ tiếng Việt
+            // Sử dụng font Arial cài đặt sẵn trên Windows để hỗ trợ hiển thị tiếng Việt Unicode
             string fontPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "arial.ttf");
             iText.Kernel.Font.PdfFont pdfFont;
             
@@ -209,7 +276,7 @@ namespace NetURLScanner.Controllers
             }
             catch
             {
-                // Fallback nếu không tìm thấy Arial
+                // Dự phòng fallback nếu không tìm thấy tệp font Arial trên máy chủ
                 pdfFont = iText.Kernel.Font.PdfFontFactory.CreateFont(iText.IO.Font.Constants.StandardFonts.HELVETICA);
             }
 
@@ -249,6 +316,16 @@ namespace NetURLScanner.Controllers
             document.Close();
 
             return File(stream.ToArray(), "application/pdf", $"ScanReport_{scan.Id}.pdf");
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+            {
+                return userId;
+            }
+            return null;
         }
     }
 }

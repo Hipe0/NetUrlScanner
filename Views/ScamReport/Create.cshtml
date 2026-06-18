@@ -1,0 +1,53 @@
+@model NetURLScanner.Models.ScamReport
+
+@{
+    ViewData["Title"] = "Báo cáo trang web / IP lừa đảo";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-danger text-white text-center py-3">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-shield-exclamation me-2"></i>Báo Cáo Lừa Đảo</h4>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted text-center mb-4">
+                    Nếu bạn phát hiện một trang web hoặc địa chỉ IP có dấu hiệu lừa đảo, giả mạo, hãy báo cáo cho chúng tôi để bảo vệ cộng đồng.
+                </p>
+
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="UrlOrIp" class="form-label fw-bold"></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-link-45deg"></i></span>
+                            <input asp-for="UrlOrIp" class="form-control" placeholder="Nhập URL hoặc địa chỉ IP (VD: luyenthi.com, 192.168.1.1)" />
+                        </div>
+                        <span asp-validation-for="UrlOrIp" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Evidence" class="form-label fw-bold">Bằng chứng / Lý do</label>
+                        <textarea asp-for="Evidence" class="form-control" rows="5" placeholder="Mô tả chi tiết tại sao bạn cho rằng đây là lừa đảo, hoặc dán đường dẫn (link) hình ảnh bằng chứng vào đây..."></textarea>
+                        <span asp-validation-for="Evidence" class="text-danger small"></span>
+                        <div class="form-text">Vui lòng cung cấp thông tin càng chi tiết càng tốt để quản trị viên có thể xác minh nhanh chóng.</div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger btn-lg fw-bold">
+                            <i class="bi bi-send-fill me-2"></i>Gửi Báo Cáo
+                        </button>
+                        <a asp-controller="Home" asp-action="Landing" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Quay lại trang chủ
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

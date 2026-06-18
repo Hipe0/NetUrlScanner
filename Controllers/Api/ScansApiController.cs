@@ -25,7 +25,16 @@ namespace NetURLScanner.Controllers.Api
         [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> GetAll()
         {
-            var scans = await _context.UrlScans
+            var currentUserId = GetCurrentUserId();
+            var isAdmin = User.IsInRole("Admin");
+
+            var query = _context.UrlScans.AsNoTracking().AsQueryable();
+            if (!isAdmin)
+            {
+                query = query.Where(x => x.UserId == currentUserId);
+            }
+
+            var scans = await query
                 .AsNoTracking()
                 .OrderByDescending(x => x.ScannedAt)
                 .Take(20)
@@ -73,6 +82,13 @@ namespace NetURLScanner.Controllers.Api
                 return NotFound(new { message = $"Không tìm thấy kết quả quét với ID = {id}" });
             }
 
+            var currentUserId = GetCurrentUserId();
+            var isAdmin = User.IsInRole("Admin");
+            if (!isAdmin && scan.UserId != currentUserId)
+            {
+                return Forbid();
+            }
+
             var reasonsList = string.IsNullOrWhiteSpace(scan.Reasons)
                 ? new List<string>()
                 : scan.Reasons.Split(';', StringSplitOptions.RemoveEmptyEntries)
@@ -105,7 +121,6 @@ namespace NetURLScanner.Controllers.Api
             return Ok(response);
         }
 
-        // POST: api/scans — cho phép khách quét URL (giống trang /Scan)
         [HttpPost]
         [AllowAnonymous]
         public async Task<IActionResult> Create([FromBody] ScanRequest request)
@@ -119,8 +134,13 @@ namespace NetURLScanner.Controllers.Api
             {
                 var result = await _scannerService.ScanAsync(request.Url);
 
-                _context.UrlScans.Add(result);
-                await _context.SaveChangesAsync();
+                var currentUserId = GetCurrentUserId();
+                if (currentUserId != null)
+                {
+                    result.UserId = currentUserId;
+                    _context.UrlScans.Add(result);
+                    await _context.SaveChangesAsync();
+                }
 
                 var reasonsList = string.IsNullOrWhiteSpace(result.Reasons)
                     ? new List<string>()
@@ -151,7 +171,14 @@ namespace NetURLScanner.Controllers.Api
                     longitude = result.Longitude
                 };
 
-                return CreatedAtAction(nameof(GetById), new { id = result.Id }, response);
+                if (currentUserId != null)
+                {
+                    return CreatedAtAction(nameof(GetById), new { id = result.Id }, response);
+                }
+                else
+                {
+                    return Ok(response);
+                }
             }
             catch (Exception)
             {
@@ -159,7 +186,6 @@ namespace NetURLScanner.Controllers.Api
             }
         }
 
-        // DELETE: api/scans/{id}
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> Delete(int id)
@@ -171,10 +197,27 @@ namespace NetURLScanner.Controllers.Api
                 return NotFound(new { message = $"Không tìm thấy kết quả quét với ID = {id}" });
             }
 
+            var currentUserId = GetCurrentUserId();
+            var isAdmin = User.IsInRole("Admin");
+            if (!isAdmin && scan.UserId != currentUserId)
+            {
+                return Forbid();
+            }
+
             _context.UrlScans.Remove(scan);
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+            {
+                return userId;
+            }
+            return null;
         }
     }
 

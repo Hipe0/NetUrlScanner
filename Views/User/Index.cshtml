@@ -16,6 +16,7 @@
                         <th>Email</th>
                         <th>Quyền hiện tại</th>
                         <th>Cập nhật Quyền</th>
+                        <th>Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -54,6 +55,11 @@
                                 {
                                     <span class="text-muted fst-italic">Tài khoản mặc định</span>
                                 }
+                            </td>
+                            <td>
+                                <a asp-action="UserScans" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-eye"></i> Xem lịch sử quét
+                                </a>
                             </td>
                         </tr>
                     }
