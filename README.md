@@ -45,8 +45,6 @@ dotnet ef database update
 dotnet run --launch-profile http
 ```
 
-Mở trình duyệt: **http://localhost:5213**
-
 ### Cấu hình kết nối database
 
 Chỉnh `ConnectionStrings:DefaultConnection` trong `appsettings.json` nếu cần:
