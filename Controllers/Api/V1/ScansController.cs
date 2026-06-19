@@ -14,15 +14,18 @@ public class ScansController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly UrlScannerService _scannerService;
+    private readonly DomainVoteService _domainVoteService;
     private readonly ILogger<ScansController> _logger;
 
     public ScansController(
         ApplicationDbContext context,
         UrlScannerService scannerService,
+        DomainVoteService domainVoteService,
         ILogger<ScansController> logger)
     {
         _context = context;
         _scannerService = scannerService;
+        _domainVoteService = domainVoteService;
         _logger = logger;
     }
 
@@ -55,8 +58,20 @@ public class ScansController : ControllerBase
                 await _context.SaveChangesAsync(cancellationToken);
             }
 
+            var voteStats = await _domainVoteService.GetStatsAsync(
+                result.NormalizedDomain ?? result.Url,
+                GetCurrentUserId());
+
+            var voteDto = new DomainVoteDto
+            {
+                UpVotes = voteStats.UpVotes,
+                DownVotes = voteStats.DownVotes,
+                NetScore = voteStats.NetScore,
+                UserVote = voteStats.CurrentUserVote
+            };
+
             return Ok(ApiResponse<ScanUrlResponse>.Ok(
-                ScanDtoMapper.ToResponse(result, request.SaveToHistory),
+                ScanDtoMapper.ToResponse(result, request.SaveToHistory, voteDto),
                 "Quét URL thành công."));
         }
         catch (Exception ex)

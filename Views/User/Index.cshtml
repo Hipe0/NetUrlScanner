@@ -5,26 +5,61 @@
 }
 
 <div class="container mt-4">
-    <h2 class="mb-4"><i class="bi bi-people"></i> Quản lý người dùng & Phân quyền</h2>
-    
-    <div class="card shadow-sm">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="bi bi-people me-2"></i>Quản lý người dùng & Phân quyền</h2>
+        <a asp-action="Create" class="btn btn-primary btn-sm"><i class="bi bi-person-plus me-1"></i>Tạo tài khoản</a>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
-            <table class="table table-hover align-middle">
+            <form asp-action="Index" method="get" class="row g-3">
+                <div class="col-md-5">
+                    <input type="text" name="search" class="form-control" placeholder="Tìm email hoặc họ tên..." value="@ViewBag.Search" />
+                </div>
+                <div class="col-md-3">
+                    <select name="role" class="form-select">
+                        <option value="">-- Tất cả vai trò --</option>
+                        @if (ViewBag.Role as string == "Admin") { <option value="Admin" selected>Admin</option> } else { <option value="Admin">Admin</option> }
+                        @if (ViewBag.Role as string == "Manager") { <option value="Manager" selected>Manager</option> } else { <option value="Manager">Manager</option> }
+                        @if (ViewBag.Role as string == "User") { <option value="User" selected>User</option> } else { <option value="User">User</option> }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                    @if (!string.IsNullOrEmpty(ViewBag.Search as string) || !string.IsNullOrEmpty(ViewBag.Role as string))
+                    {
+                        <a asp-action="Index" class="btn btn-outline-secondary ms-1">Xóa lọc</a>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>ID</th>
-                        <th>Email</th>
-                        <th>Quyền hiện tại</th>
-                        <th>Cập nhật Quyền</th>
-                        <th>Hành động</th>
+                        <th>Email / Họ tên</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Đổi quyền</th>
+                        <th>Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var item in Model)
                     {
-                        <tr>
-                            <td>@item.Id</td>
-                            <td>@item.Email</td>
+                        var isProtected = item.Email == ViewBag.ProtectedAdminEmail as string;
+                        <tr class="@(!item.IsActive ? "table-secondary" : "")">
+                            <td>
+                                <div class="fw-semibold">@item.Email</div>
+                                @if (!string.IsNullOrEmpty(item.FullName))
+                                {
+                                    <small class="text-muted">@item.FullName</small>
+                                }
+                            </td>
                             <td>
                                 @if (item.Role == "Admin")
                                 {
@@ -40,11 +75,23 @@
                                 }
                             </td>
                             <td>
-                                @if (item.Email != ViewBag.ProtectedAdminEmail as string)
+                                @if (item.IsActive)
                                 {
-                                    <form asp-action="ChangeRole" method="post" class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-success">Hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Đã khóa</span>
+                                }
+                            </td>
+                            <td><small>@item.CreatedAt.ToString("dd/MM/yyyy")</small></td>
+                            <td>
+                                @if (!isProtected)
+                                {
+                                    <form asp-action="ChangeRole" method="post" class="d-flex align-items-center gap-1">
+                                        @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@item.Id" />
-                                        <select name="role" class="form-select form-select-sm" style="width: auto;">
+                                        <select name="role" class="form-select form-select-sm" style="width:auto;">
                                             @if (item.Role == "User") { <option value="User" selected>User</option> } else { <option value="User">User</option> }
                                             @if (item.Role == "Manager") { <option value="Manager" selected>Manager</option> } else { <option value="Manager">Manager</option> }
                                         </select>
@@ -53,13 +100,32 @@
                                 }
                                 else
                                 {
-                                    <span class="text-muted fst-italic">Tài khoản mặc định</span>
+                                    <span class="text-muted fst-italic small">Admin gốc</span>
                                 }
                             </td>
                             <td>
-                                <a asp-action="UserScans" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info">
-                                    <i class="bi bi-eye"></i> Xem lịch sử quét
-                                </a>
+                                <div class="d-flex flex-wrap gap-1">
+                                    <a asp-action="UserScans" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Lịch sử quét">
+                                        <i class="bi bi-clock-history"></i>
+                                    </a>
+                                    @if (!isProtected)
+                                    {
+                                        <form asp-action="ToggleActive" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-sm @(item.IsActive ? "btn-outline-warning" : "btn-outline-success")" title="@(item.IsActive ? "Khóa" : "Mở khóa")">
+                                                <i class="bi @(item.IsActive ? "bi-lock" : "bi-unlock")"></i>
+                                            </button>
+                                        </form>
+                                        <form asp-action="DeleteUser" method="post" class="d-inline" onsubmit="return confirm('Xóa tài khoản @item.Email?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
                             </td>
                         </tr>
                     }

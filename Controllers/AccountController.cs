@@ -1,38 +1,47 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using NetURLScanner.Data;
 using NetURLScanner.Models;
+using NetURLScanner.Options;
 using System.Security.Claims;
 
 namespace NetURLScanner.Controllers
 {
-    // Controller xử lý Đăng nhập, Đăng ký, Đăng xuất
     public class AccountController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly GoogleAuthOptions _googleAuth;
 
-        public AccountController(ApplicationDbContext context)
+        public AccountController(ApplicationDbContext context, IOptions<GoogleAuthOptions> googleAuth)
         {
             _context = context;
+            _googleAuth = googleAuth.Value;
         }
 
-        // GET: Hiển thị form đăng nhập
+        private bool IsGoogleAuthEnabled =>
+            _googleAuth.Enabled &&
+            !string.IsNullOrWhiteSpace(_googleAuth.ClientId) &&
+            !string.IsNullOrWhiteSpace(_googleAuth.ClientSecret);
+
         [HttpGet]
         public IActionResult Login(string returnUrl = "/")
         {
             ViewBag.ReturnUrl = returnUrl;
+            ViewBag.GoogleAuthEnabled = IsGoogleAuthEnabled;
             return View();
         }
 
-        // POST: Xử lý đăng nhập
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string email, string password, string returnUrl = "/")
         {
             ViewBag.ReturnUrl = returnUrl;
+            ViewBag.GoogleAuthEnabled = IsGoogleAuthEnabled;
 
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
@@ -49,7 +58,20 @@ namespace NetURLScanner.Controllers
                 return View();
             }
 
-            // Kiểm tra mật khẩu
+            if (!user.IsActive)
+            {
+                ViewBag.Error = "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.";
+                return View();
+            }
+
+            if (string.IsNullOrEmpty(user.PasswordHash))
+            {
+                ViewBag.Error = IsGoogleAuthEnabled
+                    ? "Tài khoản này đăng nhập bằng Google. Vui lòng dùng nút bên dưới."
+                    : "Tài khoản này không có mật khẩu cục bộ.";
+                return View();
+            }
+
             var hasher = new PasswordHasher<User>();
             var result = hasher.VerifyHashedPassword(user, user.PasswordHash, password);
 
@@ -59,42 +81,105 @@ namespace NetURLScanner.Controllers
                 return View();
             }
 
-            // Tạo các thông tin xác thực (Claims)
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Email),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role) // Quan trọng: Phân quyền
-            };
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-
-            // Đăng nhập người dùng bằng Cookie
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-
-            // Chuyển hướng người dùng về trang trước đó hoặc trang chủ
-            if (Url.IsLocalUrl(returnUrl))
-            {
-                return Redirect(returnUrl);
-            }
-
-            return RedirectToAction("Landing", "Home");
+            await SignInAppUserAsync(user);
+            return RedirectToLocal(returnUrl);
         }
 
-        // GET: Hiển thị form đăng ký
+        [HttpGet]
+        public IActionResult GoogleLogin(string returnUrl = "/")
+        {
+            if (!IsGoogleAuthEnabled)
+            {
+                TempData["Error"] = "Đăng nhập Google chưa được cấu hình.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            var props = new AuthenticationProperties
+            {
+                RedirectUri = Url.Action(nameof(GoogleCallback), new { returnUrl })
+            };
+            return Challenge(props, GoogleDefaults.AuthenticationScheme);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GoogleCallback(string returnUrl = "/")
+        {
+            if (!IsGoogleAuthEnabled)
+                return RedirectToAction(nameof(Login), new { returnUrl });
+
+            var email = User.FindFirstValue(ClaimTypes.Email);
+            var googleId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var fullName = User.FindFirstValue(ClaimTypes.Name);
+
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(googleId))
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                TempData["Error"] = "Google không trả về email. Vui lòng thử lại.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            email = email.Trim();
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.GoogleSubjectId == googleId);
+
+            if (user == null)
+            {
+                user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+                if (user != null)
+                {
+                    if (!string.IsNullOrEmpty(user.GoogleSubjectId) && user.GoogleSubjectId != googleId)
+                    {
+                        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                        TempData["Error"] = "Email đã liên kết với tài khoản Google khác.";
+                        return RedirectToAction(nameof(Login), new { returnUrl });
+                    }
+
+                    user.GoogleSubjectId = googleId;
+                    if (string.IsNullOrWhiteSpace(user.FullName) && !string.IsNullOrWhiteSpace(fullName))
+                        user.FullName = fullName.Trim();
+                }
+                else
+                {
+                    user = new User
+                    {
+                        Email = email,
+                        GoogleSubjectId = googleId,
+                        FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName.Trim(),
+                        Role = "User",
+                        IsActive = true,
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.Users.Add(user);
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            if (!user.IsActive)
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                TempData["Error"] = "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            await SignInAppUserAsync(user);
+            return RedirectToLocal(returnUrl);
+        }
+
         [HttpGet]
         public IActionResult Register()
         {
+            ViewBag.GoogleAuthEnabled = IsGoogleAuthEnabled;
             return View();
         }
 
-        // POST: Xử lý đăng ký
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(string email, string password, string confirmPassword)
         {
+            ViewBag.GoogleAuthEnabled = IsGoogleAuthEnabled;
+
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
                 ViewBag.Error = "Vui lòng điền đầy đủ thông tin.";
@@ -115,9 +200,12 @@ namespace NetURLScanner.Controllers
                 return View();
             }
 
-            if (await _context.Users.AnyAsync(u => u.Email == email))
+            var existing = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (existing != null)
             {
-                ViewBag.Error = "Email này đã được sử dụng.";
+                ViewBag.Error = string.IsNullOrEmpty(existing.PasswordHash) && IsGoogleAuthEnabled
+                    ? "Email đã đăng ký bằng Google. Vui lòng đăng nhập bằng Google."
+                    : "Email này đã được sử dụng.";
                 return View();
             }
 
@@ -125,10 +213,10 @@ namespace NetURLScanner.Controllers
             var user = new User
             {
                 Email = email,
-                Role = "User" // Mặc định tài khoản đăng ký mới là User
+                Role = "User",
+                IsActive = true,
+                CreatedAt = DateTime.Now
             };
-            
-            // Mã hoá mật khẩu
             user.PasswordHash = hasher.HashPassword(user, password);
 
             _context.Users.Add(user);
@@ -138,7 +226,6 @@ namespace NetURLScanner.Controllers
             return RedirectToAction(nameof(Login));
         }
 
-        // Đăng xuất
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -147,11 +234,34 @@ namespace NetURLScanner.Controllers
             return RedirectToAction("Landing", "Home");
         }
 
-        // Trang thông báo từ chối truy cập khi không đủ quyền
         [HttpGet]
         public IActionResult AccessDenied()
         {
             return View();
+        }
+
+        private async Task SignInAppUserAsync(User user)
+        {
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new(ClaimTypes.Name, user.Email),
+                new(ClaimTypes.Email, user.Email),
+                new(ClaimTypes.Role, user.Role)
+            };
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(identity));
+        }
+
+        private IActionResult RedirectToLocal(string returnUrl)
+        {
+            if (Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+
+            return RedirectToAction("Landing", "Home");
         }
     }
 }

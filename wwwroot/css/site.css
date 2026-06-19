@@ -853,6 +853,48 @@ main:has(.auth-page) {
     margin-top: 8px;
 }
 
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0 16px;
+    color: var(--bs-secondary-color);
+    font-size: 0.85rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--bs-border-color);
+}
+
+.auth-google-btn {
+    width: 100%;
+    min-height: 48px;
+    border-radius: 10px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+.auth-google-btn:hover {
+    background: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+
+.auth-google-btn .bi-google {
+    color: #ea4335;
+    font-size: 1.1rem;
+}
+
 .auth-footer-link {
     text-align: center;
     margin-top: 22px;

@@ -26,6 +26,20 @@ public class ScanUrlResponse
     public string? ErrorMessage { get; set; }
     public DateTime ScannedAt { get; set; }
     public GeolocationDto? Geolocation { get; set; }
+    public string? NormalizedDomain { get; set; }
+    public string? SiteCategory { get; set; }
+    public string? SiteCategoryTags { get; set; }
+    public string? SafeBrowsingStatus { get; set; }
+    public string? SafeBrowsingThreatType { get; set; }
+    public DomainVoteDto? DomainVotes { get; set; }
+}
+
+public class DomainVoteDto
+{
+    public int UpVotes { get; set; }
+    public int DownVotes { get; set; }
+    public int NetScore { get; set; }
+    public int? UserVote { get; set; }
 }
 
 public class GeolocationDto

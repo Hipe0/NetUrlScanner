@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using NetURLScanner.Data;
@@ -9,6 +11,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<AdminSeedOptions>(
     builder.Configuration.GetSection(AdminSeedOptions.SectionName));
+builder.Services.Configure<GoogleSafeBrowsingOptions>(
+    builder.Configuration.GetSection(GoogleSafeBrowsingOptions.SectionName));
+builder.Services.Configure<OcrOptions>(
+    builder.Configuration.GetSection(OcrOptions.SectionName));
+
+builder.Services.AddHttpClient("SafeBrowsing", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(8);
+});
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddControllers();
@@ -37,15 +48,45 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddAuthentication("Cookies")
-    .AddCookie("Cookies", options =>
+builder.Services.Configure<OcrOptions>(
+    builder.Configuration.GetSection(OcrOptions.SectionName));
+builder.Services.Configure<GoogleAuthOptions>(
+    builder.Configuration.GetSection(GoogleAuthOptions.SectionName));
+
+var googleAuth = builder.Configuration.GetSection(GoogleAuthOptions.SectionName).Get<GoogleAuthOptions>() ?? new GoogleAuthOptions();
+
+var authBuilder = builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddCookie("Cookies", options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+});
+
+if (googleAuth.Enabled &&
+    !string.IsNullOrWhiteSpace(googleAuth.ClientId) &&
+    !string.IsNullOrWhiteSpace(googleAuth.ClientSecret))
+{
+    authBuilder.AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
     {
-        options.LoginPath = "/Account/Login";
-        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ClientId = googleAuth.ClientId;
+        options.ClientSecret = googleAuth.ClientSecret;
+        options.CallbackPath = "/signin-google";
+        options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     });
+}
 
 builder.Services.AddScoped<UrlScannerService>();
 builder.Services.AddScoped<AdminSeedService>();
+builder.Services.AddScoped<CmsSeedService>();
+builder.Services.AddScoped<ContentCategorizationService>();
+builder.Services.AddScoped<GoogleSafeBrowsingService>();
+builder.Services.AddScoped<DomainVoteService>();
+builder.Services.AddScoped<OcrService>();
+builder.Services.AddScoped<UrlExtractionService>();
 
 var app = builder.Build();
 
@@ -113,6 +154,9 @@ _ = Task.Run(async () =>
 
         var adminSeed = scope.ServiceProvider.GetRequiredService<AdminSeedService>();
         await adminSeed.SeedAsync();
+
+        var cmsSeed = scope.ServiceProvider.GetRequiredService<CmsSeedService>();
+        await cmsSeed.SeedAsync();
 
         using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
         _ = await client.GetAsync("http://ip-api.com/json/8.8.8.8");

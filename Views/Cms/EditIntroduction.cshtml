@@ -1,0 +1,32 @@
+@model NetURLScanner.Models.SiteContent
+@{
+    ViewData["Title"] = "Chỉnh sửa Giới thiệu";
+}
+
+<div class="container mt-4" style="max-width:900px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold mb-0">Chỉnh sửa trang Giới thiệu</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">← Quay lại CMS</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form asp-action="EditIntroduction" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="ContentKey" />
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label fw-semibold">Tiêu đề</label>
+                    <input asp-for="Title" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Body" class="form-label fw-semibold">Nội dung (hỗ trợ HTML cơ bản)</label>
+                    <textarea asp-for="Body" class="form-control" rows="12"></textarea>
+                    <div class="form-text">Nội dung này hiển thị ở đầu trang Giới thiệu.</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                <a asp-controller="Home" asp-action="Privacy" class="btn btn-outline-primary ms-2" target="_blank">Xem trang</a>
+            </form>
+        </div>
+    </div>
+</div>

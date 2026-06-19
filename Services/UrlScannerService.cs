@@ -1,9 +1,11 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
+using NetURLScanner.Helpers;
 using NetURLScanner.Models;
 
 namespace NetURLScanner.Services
@@ -60,10 +62,17 @@ namespace NetURLScanner.Services
         };
 
         private readonly ApplicationDbContext _context;
+        private readonly ContentCategorizationService _categorizationService;
+        private readonly GoogleSafeBrowsingService _safeBrowsingService;
 
-        public UrlScannerService(ApplicationDbContext context)
+        public UrlScannerService(
+            ApplicationDbContext context,
+            ContentCategorizationService categorizationService,
+            GoogleSafeBrowsingService safeBrowsingService)
         {
             _context = context;
+            _categorizationService = categorizationService;
+            _safeBrowsingService = safeBrowsingService;
         }
 
         /// <summary>
@@ -82,9 +91,11 @@ namespace NetURLScanner.Services
             };
 
             Uri? uri = null;
+            string? htmlContent = null;
             try
             {
                 uri = new Uri(url);
+                result.NormalizedDomain = DomainHelper.NormalizeHost(uri.Host);
                 var geo = await GetGeolocationAsync(uri.Host);
                 result.IpAddress = geo.Ip;
                 result.CountryName = geo.Country;
@@ -125,6 +136,19 @@ namespace NetURLScanner.Services
                 result.StatusCode = statusCodeVal;
                 result.ResponseTimeMs = stopwatch.ElapsedMilliseconds;
 
+                if (response.IsSuccessStatusCode)
+                {
+                    var mediaType = response.Content.Headers.ContentType?.MediaType ?? "";
+                    if (mediaType.Contains("html", StringComparison.OrdinalIgnoreCase) ||
+                        mediaType.Contains("text", StringComparison.OrdinalIgnoreCase) ||
+                        string.IsNullOrEmpty(mediaType))
+                    {
+                        var bytes = await response.Content.ReadAsByteArrayAsync();
+                        if (bytes.Length > 0 && bytes.Length <= 512_000)
+                            htmlContent = Encoding.UTF8.GetString(bytes);
+                    }
+                }
+
                 // Phân loại trạng thái dựa trên dải mã lỗi HTTP chuẩn.
                 result.Status = response.IsSuccessStatusCode ? "Online"
                     : statusCodeVal is >= 300 and < 400 ? "Redirect"
@@ -149,6 +173,24 @@ namespace NetURLScanner.Services
             result.RiskScore = risk.Score;
             result.RiskLevel = risk.Level;
             result.Reasons = string.Join("; ", risk.Reasons);
+
+            if (!string.IsNullOrWhiteSpace(htmlContent))
+            {
+                try
+                {
+                    var category = _categorizationService.Categorize(htmlContent);
+                    result.SiteCategory = category.PrimaryCategory;
+                    result.SiteCategoryTags = string.Join(", ", category.Tags);
+                }
+                catch
+                {
+                    result.SiteCategory = "Không phân loại được";
+                }
+            }
+
+            var safeBrowsing = await _safeBrowsingService.CheckUrlAsync(url);
+            result.SafeBrowsingStatus = safeBrowsing.Status;
+            result.SafeBrowsingThreatType = safeBrowsing.ThreatType;
 
             return result;
         }

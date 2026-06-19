@@ -1,0 +1,31 @@
+@using NetURLScanner.Services
+@model NetURLScanner.Models.UrlScan
+@{
+    var voteStats = ViewBag.DomainVoteStats as DomainVoteStats;
+    var domain = voteStats?.NormalizedDomain ?? Model.NormalizedDomain ?? Model.Url;
+}
+
+<div class="domain-vote-widget p-3 rounded border bg-body-tertiary mb-0"
+     data-domain="@domain"
+     data-authenticated="@(User.Identity?.IsAuthenticated == true ? "true" : "false")">
+    <h6 class="fw-bold mb-2"><i class="bi bi-hand-thumbs-up me-2"></i>Cộng đồng đánh giá domain</h6>
+    <p class="small text-muted mb-2">@domain</p>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <button type="button" class="btn btn-sm @(voteStats?.CurrentUserVote == 1 ? "btn-success" : "btn-outline-success")" data-vote="1" title="Tin tưởng">
+                <i class="bi bi-hand-thumbs-up"></i> <span class="vote-up-count">@(voteStats?.UpVotes ?? 0)</span>
+            </button>
+            <button type="button" class="btn btn-sm @(voteStats?.CurrentUserVote == -1 ? "btn-danger" : "btn-outline-danger")" data-vote="-1" title="Nghi ngờ">
+                <i class="bi bi-hand-thumbs-down"></i> <span class="vote-down-count">@(voteStats?.DownVotes ?? 0)</span>
+            </button>
+        }
+        else
+        {
+            <span class="badge bg-light text-dark border"><i class="bi bi-hand-thumbs-up"></i> <span class="vote-up-count">@(voteStats?.UpVotes ?? 0)</span></span>
+            <span class="badge bg-light text-dark border"><i class="bi bi-hand-thumbs-down"></i> <span class="vote-down-count">@(voteStats?.DownVotes ?? 0)</span></span>
+            <small class="text-muted">Đăng nhập để bình chọn</small>
+        }
+        <span class="small ms-1">Điểm: <strong class="vote-net-score">@(voteStats?.NetScore ?? 0)</strong></span>
+    </div>
+</div>

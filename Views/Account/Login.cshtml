@@ -36,6 +36,13 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
                 </div>
             }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger auth-alert alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-1"></i> @TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+                </div>
+            }
             @if (ViewBag.Error != null)
             {
                 <div class="alert alert-danger auth-alert alert-dismissible fade show" role="alert">
@@ -84,6 +91,8 @@
                     <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập
                 </button>
             </form>
+
+            <partial name="_GoogleSignIn" />
 
             <div class="auth-footer-link">
                 Chưa có tài khoản?

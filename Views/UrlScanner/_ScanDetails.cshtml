@@ -48,6 +48,50 @@
 
                 <dt class="col-sm-5 text-muted">Thời gian quét</dt>
                 <dd class="col-sm-7">@Model.ScannedAt.ToString("dd/MM/yyyy HH:mm:ss")</dd>
+
+                <dt class="col-sm-5 text-muted">Phân loại nội dung</dt>
+                <dd class="col-sm-7">
+                    @if (!string.IsNullOrEmpty(Model.SiteCategory))
+                    {
+                        <span class="badge bg-info text-dark">@Model.SiteCategory</span>
+                        @if (!string.IsNullOrEmpty(Model.SiteCategoryTags))
+                        {
+                            foreach (var tag in Model.SiteCategoryTags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                            {
+                                if (tag != Model.SiteCategory)
+                                {
+                                    <span class="badge bg-light text-dark border ms-1">@tag</span>
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-muted small">Chưa phân loại</span>
+                    }
+                </dd>
+
+                <dt class="col-sm-5 text-muted">Google Safe Browsing</dt>
+                <dd class="col-sm-7">
+                    @switch (Model.SafeBrowsingStatus)
+                    {
+                        case "Clean":
+                            <span class="badge bg-success"><i class="bi bi-shield-check me-1"></i>An toàn</span>
+                            break;
+                        case "Threat":
+                            <span class="badge bg-danger"><i class="bi bi-shield-exclamation me-1"></i>@(Model.SafeBrowsingThreatType?.Replace("_", " ") ?? "Nguy hiểm")</span>
+                            break;
+                        case "Unavailable":
+                            <span class="badge bg-warning text-dark">Không kiểm tra được</span>
+                            break;
+                        case "Disabled":
+                            <span class="badge bg-secondary">Chưa cấu hình API</span>
+                            break;
+                        default:
+                            <span class="text-muted">-</span>
+                            break;
+                    }
+                </dd>
             </dl>
         </div>
     </div>
@@ -123,4 +167,26 @@
             </div>
         </div>
     }
+
+    <div class="col-12 mt-3">
+        <partial name="_DomainVoteWidget" model="Model" />
+    </div>
+
+    <div class="col-12 mt-3">
+        <div class="p-3 rounded border bg-body-tertiary">
+            <h6 class="fw-bold mb-3"><i class="bi bi-bookmark me-2"></i>Nhãn & Ghi chú cá nhân</h6>
+            <div class="mb-2">
+                <label class="form-label small text-muted mb-1">Nhãn (tối đa 50 ký tự)</label>
+                <input type="text" id="scanUserLabel" class="form-control form-control-sm" maxlength="50" value="@Model.UserLabel" placeholder="vd: Cần kiểm tra lại" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label small text-muted mb-1">Ghi chú</label>
+                <textarea id="scanUserNotes" class="form-control form-control-sm" rows="3" maxlength="500" placeholder="Ghi chú riêng cho lượt quét này...">@Model.UserNotes</textarea>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" id="btnSaveNote" data-scan-id="@Model.Id">
+                <i class="bi bi-save me-1"></i>Lưu nhãn & ghi chú
+            </button>
+            <span id="noteSaveStatus" class="small ms-2 text-muted"></span>
+        </div>
+    </div>
 </div>

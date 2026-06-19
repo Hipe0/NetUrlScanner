@@ -15,6 +15,9 @@
         <a asp-action="Index" class="btn btn-secondary">
             Quay lại trang quét
         </a>
+        <a href="/Scan/ExportCsv?search=@ViewBag.Search&status=@ViewBag.Status&riskLevel=@ViewBag.RiskLevel" class="btn btn-outline-success ms-2">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i>Xuất CSV
+        </a>
     </div>
 
     <div class="row mb-4">
@@ -75,8 +78,6 @@
             </div>
         </div>
     </div>
-        </div>
-    </div>
 
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
@@ -90,6 +91,7 @@
                             <th>Response Time</th>
                             <th>Risk Level</th>
                             <th>Risk Score</th>
+                            <th>Nhãn</th>
                             <th>Scanned At</th>
                             <th>Action</th>
                         </tr>
@@ -141,6 +143,17 @@
 
                                 <td class="text-center fw-semibold">
                                     @item.RiskScore
+                                </td>
+
+                                <td class="text-center">
+                                    @if (!string.IsNullOrEmpty(item.UserLabel))
+                                    {
+                                        <span class="badge bg-info text-dark">@item.UserLabel</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
                                 </td>
 
                                 <td class="text-center scanned-col">
@@ -216,6 +229,7 @@
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="~/js/domain-vote.js" asp-append-version="true"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             var ctx = document.getElementById('riskChart').getContext('2d');
@@ -287,6 +301,9 @@
                         })
                         .then(html => {
                             contentDiv.innerHTML = html;
+                            bindNoteSaveHandler();
+                            const voteWidget = contentDiv.querySelector('.domain-vote-widget');
+                            if (voteWidget && window.DomainVote) window.DomainVote.bind(voteWidget);
                         })
                         .catch(error => {
                             contentDiv.innerHTML = '<div class="alert alert-danger">Đã xảy ra lỗi khi tải dữ liệu chi tiết.</div>';
@@ -330,6 +347,40 @@
                     });
                 });
             });
+
+            function bindNoteSaveHandler() {
+                const btn = document.getElementById('btnSaveNote');
+                if (!btn) return;
+
+                btn.onclick = function () {
+                    const scanId = this.getAttribute('data-scan-id');
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                    const formData = new FormData();
+                    if (token) formData.append('__RequestVerificationToken', token);
+                    formData.append('userLabel', document.getElementById('scanUserLabel')?.value || '');
+                    formData.append('userNotes', document.getElementById('scanUserNotes')?.value || '');
+
+                    const statusEl = document.getElementById('noteSaveStatus');
+                    statusEl.textContent = 'Đang lưu...';
+
+                    fetch('/Scan/UpdateNote/' + scanId, { method: 'POST', body: formData })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                statusEl.textContent = 'Đã lưu!';
+                                statusEl.className = 'small ms-2 text-success';
+                                window.showToast(data.message, 'success');
+                            } else {
+                                statusEl.textContent = data.message || 'Lỗi';
+                                statusEl.className = 'small ms-2 text-danger';
+                            }
+                        })
+                        .catch(() => {
+                            statusEl.textContent = 'Lỗi kết nối';
+                            statusEl.className = 'small ms-2 text-danger';
+                        });
+                };
+            }
         });
     </script>
 }
@@ -386,11 +437,16 @@
 
     .history-table th:nth-child(7),
     .history-table td:nth-child(7) {
-        width: 180px; /* Scanned At */
+        width: 120px; /* Label */
     }
 
     .history-table th:nth-child(8),
     .history-table td:nth-child(8) {
+        width: 180px; /* Scanned At */
+    }
+
+    .history-table th:nth-child(9),
+    .history-table td:nth-child(9) {
         width: 200px; /* Action */
     }
 </style>

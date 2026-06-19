@@ -1,0 +1,42 @@
+@model NetURLScanner.Models.SiteFeedback
+@{
+    ViewData["Title"] = "Góp ý";
+}
+
+<div class="container mt-4" style="max-width:720px;">
+    <h2 class="fw-bold mb-3"><i class="bi bi-chat-left-text me-2"></i>Gửi góp ý</h2>
+    <p class="text-muted">Chia sẻ ý kiến về hệ thống, báo lỗi hoặc đề xuất tính năng mới.</p>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label asp-for="SenderName" class="form-label">Họ và tên</label>
+                    <input asp-for="SenderName" class="form-control" />
+                    <span asp-validation-for="SenderName" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="SenderEmail" class="form-label">Email</label>
+                    <input asp-for="SenderEmail" class="form-control" />
+                    <span asp-validation-for="SenderEmail" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Subject" class="form-label">Tiêu đề</label>
+                    <input asp-for="Subject" class="form-control" />
+                    <span asp-validation-for="Subject" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Message" class="form-label">Nội dung góp ý</label>
+                    <textarea asp-for="Message" class="form-control" rows="5"></textarea>
+                    <span asp-validation-for="Message" class="text-danger small"></span>
+                </div>
+                <button type="submit" class="btn btn-primary">Gửi góp ý</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

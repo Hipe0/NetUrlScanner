@@ -5,7 +5,7 @@ namespace NetURLScanner.Models.Api;
 
 public static class ScanDtoMapper
 {
-    public static ScanUrlResponse ToResponse(UrlScan scan, bool includeId = true)
+    public static ScanUrlResponse ToResponse(UrlScan scan, bool includeId = true, DomainVoteDto? domainVotes = null)
     {
         var reasons = string.IsNullOrWhiteSpace(scan.Reasons)
             ? []
@@ -28,6 +28,12 @@ public static class ScanDtoMapper
             Reasons = reasons,
             ErrorMessage = scan.ErrorMessage,
             ScannedAt = scan.ScannedAt,
+            NormalizedDomain = scan.NormalizedDomain,
+            SiteCategory = scan.SiteCategory,
+            SiteCategoryTags = scan.SiteCategoryTags,
+            SafeBrowsingStatus = scan.SafeBrowsingStatus,
+            SafeBrowsingThreatType = scan.SafeBrowsingThreatType,
+            DomainVotes = domainVotes,
             Geolocation = new GeolocationDto
             {
                 IpAddress = scan.IpAddress,

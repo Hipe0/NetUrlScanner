@@ -81,9 +81,11 @@
 
     function mapApiScanData(data) {
         const geo = data.geolocation || {};
+        const votes = data.domainVotes || {};
         return {
             id: data.id,
             url: data.url,
+            normalizedDomain: data.normalizedDomain,
             status: data.status,
             statusCode: data.statusCode,
             responseTimeMs: data.responseTimeMs,
@@ -98,8 +100,46 @@
             city: geo.city,
             isp: geo.isp,
             latitude: geo.latitude,
-            longitude: geo.longitude
+            longitude: geo.longitude,
+            siteCategory: data.siteCategory,
+            siteCategoryTags: data.siteCategoryTags,
+            safeBrowsingStatus: data.safeBrowsingStatus,
+            safeBrowsingThreatType: data.safeBrowsingThreatType,
+            domainUpVotes: votes.upVotes ?? 0,
+            domainDownVotes: votes.downVotes ?? 0,
+            domainNetScore: votes.netScore ?? 0,
+            userDomainVote: votes.userVote
         };
+    }
+
+    function renderAjaxDomainVote(data) {
+        const container = document.getElementById('ajaxDomainVote');
+        if (!container || !window.DomainVote) return;
+
+        const domain = data.normalizedDomain || data.url;
+        container.dataset.domain = domain;
+        const isAuth = document.querySelector('#scanForm') != null; // guest can still see counts from API
+
+        const upActive = data.userDomainVote === 1;
+        const downActive = data.userDomainVote === -1;
+
+        container.innerHTML = `
+            <div class="domain-vote-widget p-3 rounded border bg-body" data-domain="${domain}">
+                <h6 class="fw-bold mb-2"><i class="bi bi-hand-thumbs-up me-2"></i>Cộng đồng đánh giá domain</h6>
+                <p class="small text-muted mb-2">${domain}</p>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button type="button" class="btn btn-sm ${upActive ? 'btn-success' : 'btn-outline-success'}" data-vote="1">
+                        <i class="bi bi-hand-thumbs-up"></i> <span class="vote-up-count">${data.domainUpVotes ?? 0}</span>
+                    </button>
+                    <button type="button" class="btn btn-sm ${downActive ? 'btn-danger' : 'btn-outline-danger'}" data-vote="-1">
+                        <i class="bi bi-hand-thumbs-down"></i> <span class="vote-down-count">${data.domainDownVotes ?? 0}</span>
+                    </button>
+                    <span class="small ms-1">Điểm: <strong class="vote-net-score">${data.domainNetScore ?? 0}</strong></span>
+                </div>
+            </div>`;
+
+        const widget = container.querySelector('.domain-vote-widget');
+        if (widget) window.DomainVote.bind(widget);
     }
 
     function prependToHistoryTable(data) {
@@ -257,6 +297,16 @@
                 if (data.riskLevel === 'Safe') riskBadge.classList.add('bg-success');
                 else if (data.riskLevel === 'Warning') riskBadge.classList.add('bg-warning', 'text-dark');
                 else riskBadge.classList.add('bg-danger');
+
+                const catEl = document.getElementById('ajaxCategoryBadges');
+                if (catEl && window.DomainVote) {
+                    catEl.innerHTML = window.DomainVote.renderCategory(data.siteCategory, data.siteCategoryTags);
+                }
+                const sbEl = document.getElementById('ajaxSafeBrowsingBadge');
+                if (sbEl && window.DomainVote) {
+                    sbEl.innerHTML = window.DomainVote.renderSafeBrowsingBadge(data.safeBrowsingStatus, data.safeBrowsingThreatType);
+                }
+                renderAjaxDomainVote(data);
 
                 ajaxResultCard.classList.remove('d-none');
                 void ajaxResultCard.offsetWidth;

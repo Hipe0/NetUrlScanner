@@ -1,0 +1,109 @@
+@model NetURLScanner.Controllers.OcrScanPageModel
+@{
+    ViewData["Title"] = "Quét ảnh OCR";
+}
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-2"><i class="bi bi-image me-2"></i>Quét link từ ảnh chụp màn hình</h2>
+    <p class="text-muted mb-4">
+        Upload ảnh SMS, email hoặc tin nhắn lừa đảo — hệ thống đọc chữ (OCR) và tự động trích URL để quét rủi ro.
+    </p>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+            <form method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Chọn ảnh</label>
+                    <input type="file" name="imageFile" class="form-control" accept="image/*" required />
+                    <div class="form-text">JPG, PNG, WEBP, BMP — tối đa 5MB. Ảnh lưu tại <code>uploads/ocr-images/</code></div>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search me-1"></i>Đọc ảnh & quét URL
+                </button>
+            </form>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SavedImagePath))
+    {
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-transparent fw-bold">Ảnh đã upload</div>
+                    <div class="card-body text-center">
+                        <img src="@Model.SavedImagePath" alt="Ảnh OCR" class="img-fluid rounded border" style="max-height:420px;object-fit:contain;" />
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-header bg-transparent fw-bold">Văn bản OCR đọc được</div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrWhiteSpace(Model.ExtractedText))
+                        {
+                            <pre class="mb-0 small bg-body-tertiary p-3 rounded border" style="white-space:pre-wrap;max-height:200px;overflow:auto;">@Model.ExtractedText</pre>
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0">@(Model.OcrError ?? "Không có văn bản.")</p>
+                        }
+                    </div>
+                </div>
+
+                @if (Model.ExtractedUrls.Any())
+                {
+                    <div class="card shadow-sm border-0 mb-3">
+                        <div class="card-header bg-transparent fw-bold">URL trích xuất (@Model.ExtractedUrls.Count)</div>
+                        <div class="card-body">
+                            <ul class="mb-0">
+                                @foreach (var u in Model.ExtractedUrls)
+                                {
+                                    <li class="text-break-all small">@u</li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.ScanResults.Any())
+                {
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-transparent fw-bold">Kết quả quét</div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead><tr><th>URL</th><th>Rủi ro</th><th></th></tr></thead>
+                                <tbody>
+                                    @foreach (var item in Model.ScanResults)
+                                    {
+                                        <tr>
+                                            <td class="text-break-all small">@item.Url</td>
+                                            <td>
+                                                @if (item.Success)
+                                                {
+                                                    <span class="badge @(item.RiskLevel == "Safe" ? "bg-success" : item.RiskLevel == "Warning" ? "bg-warning text-dark" : "bg-danger")">
+                                                        @item.RiskLevel (@item.RiskScore)
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-danger small">@item.ErrorMessage</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (item.ScanId.HasValue)
+                                                {
+                                                    <a asp-controller="UrlScanner" asp-action="Details" asp-route-id="@item.ScanId" class="btn btn-sm btn-outline-primary">Chi tiết</a>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

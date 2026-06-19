@@ -179,11 +179,22 @@
 
                 <!-- Cột phải: Đánh giá chi tiết của hệ thống -->
                 <div class="col-lg-6 d-flex flex-column">
-                    <div class="card border rounded-3 bg-body-tertiary h-100 shadow-sm">
+                        <div class="card border rounded-3 bg-body-tertiary h-100 shadow-sm">
                         <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
                             <h5 class="fw-bold mb-0 text-primary">Đánh giá chi tiết từ hệ thống</h5>
                         </div>
                         <div class="card-body p-4 d-flex flex-column">
+                            <div class="mb-3 p-3 border rounded-3 bg-body">
+                                <div class="mb-2">
+                                    <span class="text-muted d-block small">Phân loại nội dung (tự động)</span>
+                                    <div id="ajaxCategoryBadges" class="mt-1">-</div>
+                                </div>
+                                <div>
+                                    <span class="text-muted d-block small">Google Safe Browsing</span>
+                                    <div id="ajaxSafeBrowsingBadge" class="mt-1">-</div>
+                                </div>
+                            </div>
+                            <div id="ajaxDomainVote" class="mb-3" data-domain=""></div>
                             <p class="text-muted small mb-3">Các dấu hiệu bất thường hoặc an toàn được phát hiện sau khi phân tích:</p>
                             <ul id="ajaxReasonsList" class="list-group list-group-flush flex-grow-1 overflow-y-auto mb-0" style="max-height: 280px; font-size: 0.95rem;">
                                 <!-- Lý do đổ từ JS -->
@@ -295,5 +306,6 @@
 
 @section Scripts {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="~/js/domain-vote.js" asp-append-version="true"></script>
     <script src="~/js/scan-page.js" asp-append-version="true"></script>
 }

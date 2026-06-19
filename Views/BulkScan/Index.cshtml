@@ -1,0 +1,55 @@
+@model List<NetURLScanner.Controllers.BulkScanResultItem>
+@{
+    ViewData["Title"] = "Quét hàng loạt";
+}
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-3"><i class="bi bi-list-check me-2"></i>Quét URL hàng loạt</h2>
+    <p class="text-muted">Dán danh sách URL hoặc import file CSV (cột đầu tiên là URL). Tối đa 30 URL mỗi lần.</p>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Danh sách URL</label>
+                    <textarea name="urlList" class="form-control" rows="6" placeholder="https://google.com&#10;https://github.com&#10;example.com"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Hoặc upload CSV</label>
+                    <input type="file" name="csvFile" class="form-control" accept=".csv,.txt" />
+                    <div class="form-text">Mẫu CSV: <code>url</code> ở dòng đầu, mỗi dòng một URL.</div>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-play-fill me-1"></i>Bắt đầu quét</button>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-transparent fw-bold">Kết quả</div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>URL</th><th>Trạng thái</th><th>Rủi ro</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-break-all">@item.Url</td>
+                                <td>@(item.Success ? item.Status : "Lỗi")</td>
+                                <td>@(item.Success ? $"{item.RiskLevel} ({item.RiskScore})" : item.ErrorMessage)</td>
+                                <td>
+                                    @if (item.ScanId.HasValue)
+                                    {
+                                        <a asp-controller="UrlScanner" asp-action="Details" asp-route-id="@item.ScanId" class="btn btn-sm btn-outline-primary">Chi tiết</a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

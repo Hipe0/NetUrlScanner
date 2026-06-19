@@ -1,0 +1,70 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    var dailyLabels = ViewBag.DailyLabels as List<string> ?? new List<string>();
+    var dailyCounts = ViewBag.DailyCounts as List<int> ?? new List<int>();
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h2>
+            <p class="text-muted mb-0">Tổng quan hoạt động quét URL @(ViewBag.IsAdmin == true ? "(toàn hệ thống)" : "(của bạn)")</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="UrlScanner" asp-action="Index" class="btn btn-primary btn-sm">Quét URL</a>
+            <a asp-controller="BulkScan" asp-action="Index" class="btn btn-outline-primary btn-sm">Quét hàng loạt</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><small class="text-muted">Tổng lượt quét</small><h3 class="fw-bold mb-0">@ViewBag.TotalScans</h3></div></div></div>
+        <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><small class="text-muted">Hôm nay</small><h3 class="fw-bold mb-0 text-primary">@ViewBag.TodayScans</h3></div></div></div>
+        <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><small class="text-muted">Tuần này</small><h3 class="fw-bold mb-0 text-info">@ViewBag.WeekScans</h3></div></div></div>
+        <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><small class="text-muted">Suspicious</small><h3 class="fw-bold mb-0 text-danger">@ViewBag.SuspiciousCount</h3></div></div></div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Xu hướng 7 ngày</h5>
+                    <canvas id="dailyChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <h6 class="fw-bold">Phân bố rủi ro</h6>
+                    <div class="d-flex justify-content-between"><span>Safe</span><span class="badge bg-success">@ViewBag.SafeCount</span></div>
+                    <div class="d-flex justify-content-between mt-2"><span>Warning</span><span class="badge bg-warning text-dark">@ViewBag.WarningCount</span></div>
+                    <div class="d-flex justify-content-between mt-2"><span>Suspicious</span><span class="badge bg-danger">@ViewBag.SuspiciousCount</span></div>
+                </div>
+            </div>
+            @if (User.IsInRole("Admin"))
+            {
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <h6 class="fw-bold">Việc cần xử lý</h6>
+                        <p class="mb-1 small">Góp ý chờ phản hồi: <strong>@ViewBag.PendingFeedbacks</strong></p>
+                        <a asp-controller="Feedback" asp-action="Index" class="btn btn-sm btn-outline-primary">Xem inbox</a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        new Chart(document.getElementById('dailyChart'), {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dailyLabels)),
+                datasets: [{ label: 'Lượt quét', data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dailyCounts)), borderColor: '#0d6efd', tension: 0.3, fill: false }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+    </script>
+}

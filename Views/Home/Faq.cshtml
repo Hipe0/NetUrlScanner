@@ -1,0 +1,40 @@
+@model IEnumerable<NetURLScanner.Models.FaqItem>
+@{
+    ViewData["Title"] = "Câu hỏi thường gặp";
+}
+
+<div class="container mt-4" style="max-width:800px;">
+    <h1 class="fw-bold mb-2">Câu hỏi thường gặp (FAQ)</h1>
+    <p class="text-muted mb-4">Giải đáp các thắc mắc phổ biến khi sử dụng NetURLScanner.</p>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">Chưa có câu hỏi FAQ. Vui lòng quay lại sau.</div>
+    }
+    else
+    {
+        <div class="accordion" id="faqAccordion">
+            @foreach (var (item, index) in Model.Select((x, i) => (x, i)))
+            {
+                var collapseId = $"faq-{item.Id}";
+                <div class="accordion-item border-0 shadow-sm mb-2">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button @(index > 0 ? "collapsed" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId">
+                            @item.Question
+                        </button>
+                    </h2>
+                    <div id="@collapseId" class="accordion-collapse collapse @(index == 0 ? "show" : "")" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-muted">
+                            @Html.Raw(item.Answer.Replace("\n", "<br />"))
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="mt-4 text-center">
+        <p class="text-muted mb-2">Không tìm thấy câu trả lời?</p>
+        <a asp-controller="Feedback" asp-action="Create" class="btn btn-outline-primary btn-sm">Gửi góp ý cho chúng tôi</a>
+    </div>
+</div>

@@ -1,14 +1,26 @@
+@model NetURLScanner.Models.SiteContent?
 @{
-    ViewData["Title"] = "Giới thiệu";
+    ViewData["Title"] = Model?.Title ?? "Giới thiệu";
 }
 
 <div class="container mt-4">
     <div class="mb-4">
-        <h1 class="fw-bold">Giới thiệu NetURLScanner</h1>
-        <p class="text-muted">
-            NetURLScanner là hệ thống web hỗ trợ kiểm tra trạng thái hoạt động của URL và đánh giá mức độ rủi ro
-            dựa trên các đặc điểm kỹ thuật, cấu trúc đường dẫn, dấu hiệu giả mạo tên miền và các rule phân tích bảo mật.
-        </p>
+        <h1 class="fw-bold">@(Model?.Title ?? "Giới thiệu NetURLScanner")</h1>
+        @if (Model != null && !string.IsNullOrWhiteSpace(Model.Body))
+        {
+            <div class="card shadow-sm border-0 border-start border-primary border-4 mb-4">
+                <div class="card-body cms-intro">
+                    @Html.Raw(Model.Body)
+                </div>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">
+                NetURLScanner là hệ thống web hỗ trợ kiểm tra trạng thái hoạt động của URL và đánh giá mức độ rủi ro
+                dựa trên các đặc điểm kỹ thuật, cấu trúc đường dẫn, dấu hiệu giả mạo tên miền và các rule phân tích bảo mật.
+            </p>
+        }
     </div>
 
     <div class="card shadow-sm border-0 mb-4">

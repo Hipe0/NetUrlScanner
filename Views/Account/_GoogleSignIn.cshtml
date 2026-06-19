@@ -1,0 +1,19 @@
+@{
+    var returnUrl = ViewBag.ReturnUrl as string ?? "/";
+    var googleEnabled = ViewBag.GoogleAuthEnabled as bool? == true;
+}
+
+@if (googleEnabled)
+{
+    <div class="auth-divider">
+        <span>hoặc</span>
+    </div>
+
+    <a class="btn auth-google-btn"
+       asp-controller="Account"
+       asp-action="GoogleLogin"
+       asp-route-returnUrl="@returnUrl">
+        <i class="bi bi-google" aria-hidden="true"></i>
+        Tiếp tục bằng Google
+    </a>
+}

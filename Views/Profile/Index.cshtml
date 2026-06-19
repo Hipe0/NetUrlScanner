@@ -1,0 +1,102 @@
+@model NetURLScanner.Models.User
+@{
+    ViewData["Title"] = "Hồ sơ cá nhân";
+}
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-4"><i class="bi bi-person-circle me-2"></i>Hồ sơ cá nhân</h2>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-1">@(Model.FullName ?? Model.Email)</h5>
+                    <p class="text-muted small mb-2">@Model.Email</p>
+                    <span class="badge bg-primary">@Model.Role</span>
+                    @if (!string.IsNullOrEmpty(Model.GoogleSubjectId))
+                    {
+                        <span class="badge bg-light text-dark border ms-1"><i class="bi bi-google me-1"></i>Google</span>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 mt-3">
+                <div class="card-body">
+                    <h6 class="fw-bold">Thống kê quét</h6>
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="d-flex justify-content-between py-1"><span>Tổng lượt quét</span><strong>@ViewBag.TotalScans</strong></li>
+                        <li class="d-flex justify-content-between py-1"><span class="text-success">Safe</span><strong>@ViewBag.SafeCount</strong></li>
+                        <li class="d-flex justify-content-between py-1"><span class="text-warning">Warning</span><strong>@ViewBag.WarningCount</strong></li>
+                        <li class="d-flex justify-content-between py-1"><span class="text-danger">Suspicious</span><strong>@ViewBag.SuspiciousCount</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-transparent fw-bold">Cập nhật thông tin</div>
+                <div class="card-body">
+                    <form asp-action="Update" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label class="form-label">Họ và tên</label>
+                            <input type="text" name="fullName" class="form-control" value="@Model.FullName" placeholder="Nhập họ tên" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Số điện thoại</label>
+                            <input type="text" name="phone" class="form-control" value="@Model.Phone" placeholder="vd: 0901234567" />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Lưu thông tin</button>
+                    </form>
+                </div>
+            </div>
+
+            @if (string.IsNullOrEmpty(Model.PasswordHash))
+            {
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-transparent fw-bold">Đặt mật khẩu</div>
+                    <div class="card-body">
+                        <p class="text-muted small">Tài khoản đăng nhập bằng Google. Đặt mật khẩu nếu muốn đăng nhập bằng email.</p>
+                        <form asp-action="SetPassword" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label class="form-label">Mật khẩu mới</label>
+                                <input type="password" name="newPassword" class="form-control" minlength="6" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Xác nhận mật khẩu mới</label>
+                                <input type="password" name="confirmPassword" class="form-control" minlength="6" required />
+                            </div>
+                            <button type="submit" class="btn btn-outline-primary">Đặt mật khẩu</button>
+                        </form>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-transparent fw-bold">Đổi mật khẩu</div>
+                    <div class="card-body">
+                        <form asp-action="ChangePassword" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label class="form-label">Mật khẩu hiện tại</label>
+                                <input type="password" name="currentPassword" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Mật khẩu mới</label>
+                                <input type="password" name="newPassword" class="form-control" minlength="6" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Xác nhận mật khẩu mới</label>
+                                <input type="password" name="confirmPassword" class="form-control" minlength="6" required />
+                            </div>
+                            <button type="submit" class="btn btn-warning">Đổi mật khẩu</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

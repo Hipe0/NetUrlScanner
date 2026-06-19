@@ -33,3 +33,9 @@ packages/
 
 # Test results
 TestResults/
+
+# User uploads (OCR images, etc.)
+wwwroot/uploads/
+
+# Tesseract language data (download per README)
+tessdata/*.traineddata

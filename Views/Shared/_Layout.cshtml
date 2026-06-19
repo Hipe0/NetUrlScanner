@@ -50,109 +50,96 @@
                 </button>
 
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                    <ul class="navbar-nav flex-grow-1 align-items-lg-center">
 
                         <li class="nav-item">
-                            <a class="nav-link text-body"
-                               asp-area=""
-                               asp-controller="UrlScanner"
-                               asp-action="Index">
-                                Quét URL
-                            </a>
+                            <a class="nav-link text-body" asp-controller="UrlScanner" asp-action="Index">Quét URL</a>
                         </li>
 
                         @if (User?.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-body"
-                                   asp-area=""
-                                   asp-controller="UrlScanner"
-                                   asp-action="History">
-                                    Lịch sử quét
+                                <a class="nav-link text-body" asp-controller="OcrScan" asp-action="Index">
+                                    <i class="bi bi-image me-1"></i>Quét ảnh OCR
                                 </a>
                             </li>
-                        }
 
-                        @if (!(User?.Identity?.IsAuthenticated == true && (User.IsInRole("Admin") || User.IsInRole("Manager"))))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-danger fw-bold"
-                                   asp-area=""
-                                   asp-controller="ScamReport"
-                                   asp-action="Create">
-                                    <i class="bi bi-shield-exclamation me-1"></i>Báo cáo lừa đảo
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-body" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Tài khoản
                                 </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Index"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+                                    <li><a class="dropdown-item" asp-controller="UrlScanner" asp-action="History"><i class="bi bi-clock-history me-2"></i>Lịch sử quét</a></li>
+                                    <li><a class="dropdown-item" asp-controller="BulkScan" asp-action="Index"><i class="bi bi-list-check me-2"></i>Quét hàng loạt</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index"><i class="bi bi-person me-2"></i>Hồ sơ</a></li>
+                                </ul>
                             </li>
                         }
 
                         @if (User?.Identity?.IsAuthenticated == true && (User.IsInRole("Admin") || User.IsInRole("Manager")))
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-body"
-                                   asp-area=""
-                                   asp-controller="TrustedBrands"
-                                   asp-action="Index">
-                                    Whitelist
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-body" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Kiểm duyệt
                                 </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" asp-controller="TrustedBrands" asp-action="Index"><i class="bi bi-shield-check me-2"></i>Whitelist</a></li>
+                                    <li><a class="dropdown-item" asp-controller="BlacklistedDomains" asp-action="Index"><i class="bi bi-shield-x me-2"></i>Blacklist</a></li>
+                                    <li><a class="dropdown-item" asp-controller="ScamReport" asp-action="Index"><i class="bi bi-flag me-2"></i>Quản lý báo cáo</a></li>
+                                </ul>
                             </li>
-
+                        }
+                        else if (User?.Identity?.IsAuthenticated != true)
+                        {
                             <li class="nav-item">
-                                <a class="nav-link text-body"
-                                   asp-area=""
-                                   asp-controller="BlacklistedDomains"
-                                   asp-action="Index">
-                                    Blacklist
-                                </a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link text-body"
-                                   asp-area=""
-                                   asp-controller="ScamReport"
-                                   asp-action="Index">
-                                    Quản lý báo cáo
+                                <a class="nav-link text-danger fw-semibold" asp-controller="ScamReport" asp-action="Create">
+                                    <i class="bi bi-shield-exclamation me-1"></i>Báo cáo lừa đảo
                                 </a>
                             </li>
                         }
 
-                        <li class="nav-item">
-                            <a class="nav-link text-body"
-                               asp-area=""
-                               asp-controller="Home"
-                               asp-action="Privacy">
-                                Giới thiệu
+                        @if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-body" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Quản trị
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" asp-controller="User" asp-action="Index"><i class="bi bi-people me-2"></i>Người dùng</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Cms" asp-action="Index"><i class="bi bi-pencil-square me-2"></i>CMS</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Feedback" asp-action="Index"><i class="bi bi-inbox me-2"></i>Inbox góp ý</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item" href="/swagger" target="_blank"><i class="bi bi-file-earmark-code me-2"></i>Swagger API</a></li>
+                                </ul>
+                            </li>
+                        }
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-body" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Trợ giúp
                             </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-controller="Home" asp-action="Privacy"><i class="bi bi-info-circle me-2"></i>Giới thiệu</a></li>
+                                <li><a class="dropdown-item" asp-controller="Home" asp-action="Faq"><i class="bi bi-question-circle me-2"></i>FAQ</a></li>
+                                <li><a class="dropdown-item" asp-controller="Feedback" asp-action="Create"><i class="bi bi-chat-left-text me-2"></i>Góp ý</a></li>
+                                @if (User?.Identity?.IsAuthenticated == true && !User.IsInRole("Admin") && !User.IsInRole("Manager"))
+                                {
+                                    <li><a class="dropdown-item" asp-controller="ScamReport" asp-action="Create"><i class="bi bi-shield-exclamation me-2"></i>Báo cáo lừa đảo</a></li>
+                                }
+                            </ul>
                         </li>
-
-                        @if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-body"
-                                   asp-area=""
-                                   asp-controller="User"
-                                   asp-action="Index">
-                                    Quản lý người dùng & Phân quyền
-                                </a>
-                            </li>
-                        }
-
-                        @if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-primary fw-semibold"
-                                   href="/swagger"
-                                   target="_blank">
-                                    <i class="bi bi-file-earmark-code-fill me-1"></i>Swagger UI
-                                </a>
-                            </li>
-                        }
                     </ul>
 
                     <!-- Nút đăng nhập/đăng ký & chuyển đổi Dark Mode -->
                     <div class="d-flex align-items-center ms-auto mt-2 mt-sm-0 gap-2">
-                        @if (User.Identity.IsAuthenticated)
+                        @if (User?.Identity?.IsAuthenticated == true)
                         {
-                            <span class="text-muted me-2">Xin chào, @User.Identity.Name</span>
+                            <a asp-controller="Profile" asp-action="Index" class="btn btn-outline-secondary btn-sm" title="Hồ sơ cá nhân">
+                                <i class="bi bi-person-circle"></i>
+                            </a>
+                            <span class="text-muted me-2 d-none d-md-inline">Xin chào, @User.Identity.Name</span>
                             <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                 <button type="submit" class="btn btn-outline-danger btn-sm">Đăng xuất</button>
                             </form>

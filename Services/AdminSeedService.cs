@@ -31,6 +31,8 @@ public class AdminSeedService
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
+        await ActivateLegacyUsersAsync(cancellationToken);
+
         if (!_options.Enabled)
         {
             return;
@@ -53,7 +55,9 @@ public class AdminSeedService
         var adminUser = new User
         {
             Email = email,
-            Role = "Admin"
+            Role = "Admin",
+            IsActive = true,
+            CreatedAt = DateTime.Now
         };
         adminUser.PasswordHash = hasher.HashPassword(adminUser, _options.Password);
 
@@ -61,5 +65,26 @@ public class AdminSeedService
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Đã tạo tài khoản Admin mặc định: {Email}", email);
+    }
+
+    /// <summary>
+    /// Kích hoạt user đã tồn tại trước migration (CreatedAt mặc định, IsActive=false).
+    /// </summary>
+    private async Task ActivateLegacyUsersAsync(CancellationToken cancellationToken)
+    {
+        var legacyUsers = await _context.Users
+            .Where(u => u.CreatedAt == default)
+            .ToListAsync(cancellationToken);
+
+        if (legacyUsers.Count == 0) return;
+
+        foreach (var user in legacyUsers)
+        {
+            user.IsActive = true;
+            user.CreatedAt = DateTime.Now;
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Đã kích hoạt {Count} tài khoản cũ sau migration.", legacyUsers.Count);
     }
 }

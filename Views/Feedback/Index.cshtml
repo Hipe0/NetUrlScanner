@@ -1,0 +1,42 @@
+@model IEnumerable<NetURLScanner.Models.SiteFeedback>
+@{
+    ViewData["Title"] = "Inbox góp ý";
+}
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-4"><i class="bi bi-inbox me-2"></i>Quản lý góp ý người dùng</h2>
+
+    <div class="mb-3">
+        <a asp-action="Index" class="btn btn-sm @(ViewBag.Status == null ? "btn-primary" : "btn-outline-primary")">Tất cả</a>
+        <a asp-action="Index" asp-route-status="Pending" class="btn btn-sm @(ViewBag.Status as string == "Pending" ? "btn-primary" : "btn-outline-primary")">Chờ xử lý</a>
+        <a asp-action="Index" asp-route-status="Resolved" class="btn btn-sm @(ViewBag.Status as string == "Resolved" ? "btn-primary" : "btn-outline-primary")">Đã xử lý</a>
+    </div>
+
+    @foreach (var item in Model)
+    {
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h5 class="fw-bold mb-1">@item.Subject</h5>
+                        <small class="text-muted">@item.SenderName &lt;@item.SenderEmail&gt; · @item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                    </div>
+                    <span class="badge @(item.Status == "Pending" ? "bg-warning text-dark" : "bg-success")">@item.Status</span>
+                </div>
+                <p class="mb-2">@item.Message</p>
+                @if (!string.IsNullOrEmpty(item.AdminReply))
+                {
+                    <div class="alert alert-success py-2 mb-2"><strong>Phản hồi:</strong> @item.AdminReply</div>
+                }
+                @if (item.Status == "Pending")
+                {
+                    <form asp-action="Resolve" asp-route-id="@item.Id" method="post" class="mt-2">
+                        @Html.AntiForgeryToken()
+                        <textarea name="adminReply" class="form-control form-control-sm mb-2" rows="2" placeholder="Nhập phản hồi cho người dùng..." required></textarea>
+                        <button type="submit" class="btn btn-sm btn-success">Đánh dấu đã xử lý</button>
+                    </form>
+                }
+            </div>
+        </div>
+    }
+</div>

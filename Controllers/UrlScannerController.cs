@@ -12,13 +12,16 @@ namespace NetURLScanner.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UrlScannerService _scannerService;
+        private readonly DomainVoteService _domainVoteService;
 
         public UrlScannerController(
             ApplicationDbContext context,
-            UrlScannerService scannerService)
+            UrlScannerService scannerService,
+            DomainVoteService domainVoteService)
         {
             _context = context;
             _scannerService = scannerService;
+            _domainVoteService = domainVoteService;
         }
 
         /// <summary>
@@ -75,6 +78,10 @@ namespace NetURLScanner.Controllers
                         .Where(x => !string.IsNullOrWhiteSpace(x))
                         .ToList();
 
+                var domainStats = await _domainVoteService.GetStatsAsync(
+                    result.NormalizedDomain ?? result.Url,
+                    GetCurrentUserId());
+
                 return Json(new
                 {
                     success = true,
@@ -82,6 +89,7 @@ namespace NetURLScanner.Controllers
                     {
                         id = result.Id,
                         url = result.Url,
+                        normalizedDomain = domainStats.NormalizedDomain,
                         status = result.Status,
                         statusCode = result.StatusCode,
                         responseTimeMs = result.ResponseTimeMs,
@@ -97,7 +105,15 @@ namespace NetURLScanner.Controllers
                         city = result.City,
                         isp = result.Isp,
                         latitude = result.Latitude,
-                        longitude = result.Longitude
+                        longitude = result.Longitude,
+                        siteCategory = result.SiteCategory,
+                        siteCategoryTags = result.SiteCategoryTags,
+                        safeBrowsingStatus = result.SafeBrowsingStatus,
+                        safeBrowsingThreatType = result.SafeBrowsingThreatType,
+                        domainUpVotes = domainStats.UpVotes,
+                        domainDownVotes = domainStats.DownVotes,
+                        domainNetScore = domainStats.NetScore,
+                        userDomainVote = domainStats.CurrentUserVote
                     }
                 });
             }
@@ -149,6 +165,10 @@ namespace NetURLScanner.Controllers
             {
                 return Forbid();
             }
+
+            ViewBag.DomainVoteStats = await _domainVoteService.GetStatsAsync(
+                scan.NormalizedDomain ?? scan.Url,
+                currentUserId);
 
             return PartialView("_ScanDetails", scan);
         }
@@ -316,6 +336,57 @@ namespace NetURLScanner.Controllers
             document.Close();
 
             return File(stream.ToArray(), "application/pdf", $"ScanReport_{scan.Id}.pdf");
+        }
+
+        [HttpGet("/Scan/ExportCsv")]
+        [Authorize(Roles = "Admin,Manager,User")]
+        public async Task<IActionResult> ExportCsv(string? search, string? status, string? riskLevel)
+        {
+            var currentUserId = GetCurrentUserId();
+            var isAdmin = User.IsInRole("Admin");
+            var query = _context.UrlScans.AsNoTracking().AsQueryable();
+
+            if (!isAdmin)
+                query = query.Where(x => x.UserId == currentUserId);
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(x => x.Url.Contains(search));
+            if (!string.IsNullOrWhiteSpace(status))
+                query = query.Where(x => x.Status == status);
+            if (!string.IsNullOrWhiteSpace(riskLevel))
+                query = query.Where(x => x.RiskLevel == riskLevel);
+
+            var scans = await query.OrderByDescending(x => x.ScannedAt).Take(1000).ToListAsync();
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Id,Url,Domain,Status,StatusCode,ResponseTimeMs,RiskLevel,RiskScore,Category,SafeBrowsing,Label,Notes,ScannedAt");
+            foreach (var s in scans)
+            {
+                sb.AppendLine($"{s.Id},\"{s.Url.Replace("\"", "\"\"")}\",{s.NormalizedDomain},{s.Status},{s.StatusCode},{s.ResponseTimeMs},{s.RiskLevel},{s.RiskScore},\"{s.SiteCategory}\",{s.SafeBrowsingStatus},\"{s.UserLabel}\",\"{s.UserNotes?.Replace("\"", "\"\"")}\",{s.ScannedAt:yyyy-MM-dd HH:mm:ss}");
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
+            return File(bytes, "text/csv", $"ScanHistory_{DateTime.Now:yyyyMMdd_HHmm}.csv");
+        }
+
+        [HttpPost("/Scan/UpdateNote/{id}")]
+        [Authorize(Roles = "Admin,Manager,User")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateNote(int id, string? userLabel, string? userNotes)
+        {
+            var scan = await _context.UrlScans.FindAsync(id);
+            if (scan == null)
+                return Json(new { success = false, message = "Không tìm thấy kết quả quét." });
+
+            var currentUserId = GetCurrentUserId();
+            var isAdmin = User.IsInRole("Admin");
+            if (!isAdmin && scan.UserId != currentUserId)
+                return Json(new { success = false, message = "Bạn không có quyền sửa ghi chú này." });
+
+            scan.UserLabel = string.IsNullOrWhiteSpace(userLabel) ? null : userLabel.Trim()[..Math.Min(50, userLabel.Trim().Length)];
+            scan.UserNotes = string.IsNullOrWhiteSpace(userNotes) ? null : userNotes.Trim()[..Math.Min(500, userNotes.Trim().Length)];
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Đã lưu nhãn và ghi chú." });
         }
 
         private int? GetCurrentUserId()
