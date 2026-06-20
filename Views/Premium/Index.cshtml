@@ -1,71 +1,250 @@
 @{
     ViewData["Title"] = "Nâng cấp Premium";
+    var isPremium = ViewBag.IsAlreadyPremium == true;
+    var isLoggedIn = User.Identity?.IsAuthenticated == true;
+    var transferNote = isLoggedIn ? $"NUS {User.Identity!.Name}" : "";
 }
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-8 text-center">
-        <h2 class="fw-bold mb-4">Gói Premium (Dành cho thành viên)</h2>
-        <p class="text-muted mb-5">Nâng cấp để sử dụng các tính năng cao cấp và quét không giới hạn.</p>
+<div class="premium-page">
+    <section class="premium-hero text-center">
+        <div class="premium-hero-glow" aria-hidden="true"></div>
+        <span class="premium-badge"><i class="bi bi-stars me-1"></i>NetURLScanner Pro</span>
+        <h1 class="premium-hero-title">Bảo vệ sâu hơn,<br class="d-none d-sm-block" /> quét thông minh hơn</h1>
+        <p class="premium-hero-lead">
+            Nâng cấp để mở khóa OCR đọc ảnh lừa đảo và tra cứu tài khoản ngân hàng nghi ngờ —
+            hai công cụ quan trọng nhất khi phòng chống scam.
+        </p>
+    </section>
 
-        @if (ViewBag.IsAlreadyPremium == true)
-        {
-            <div class="alert alert-success">
-                <i class="bi bi-star-fill text-warning me-2"></i> Bạn đang là thành viên Premium. Chúc bạn trải nghiệm ứng dụng vui vẻ!
+    @if (isPremium)
+    {
+        <section class="premium-active-card">
+            <div class="premium-active-icon">
+                <i class="bi bi-patch-check-fill"></i>
             </div>
-            <a asp-controller="Home" asp-action="Landing" class="btn btn-outline-primary mt-3">Về trang chủ</a>
-        }
-        else
-        {
-            <div class="card shadow-lg border-warning mx-auto" style="max-width: 400px;">
-                <div class="card-header bg-warning text-dark py-3">
-                    <h4 class="mb-0 fw-bold"><i class="bi bi-star-fill me-2"></i>NetURLScanner Pro</h4>
-                </div>
-                <div class="card-body p-4">
-                    <h2 class="card-title fw-bold">0đ <small class="text-muted fs-6">/ trọn đời (Thử nghiệm)</small></h2>
-                    <ul class="list-unstyled text-start mt-4 mb-4">
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Không giới hạn lượt quét URL</li>
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> <strong>Sử dụng tính năng OCR</strong> quét ảnh chụp màn hình</li>
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> <strong>Kiểm tra tài khoản Ngân hàng</strong> lừa đảo</li>
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Không quảng cáo</li>
-                    </ul>
+            <div>
+                <h2 class="h4 fw-bold mb-1">Bạn đang là thành viên Premium</h2>
+                <p class="text-muted mb-0">Toàn bộ tính năng Pro đã được kích hoạt trên tài khoản của bạn.</p>
+            </div>
+            <div class="premium-quick-actions">
+                <a asp-controller="OcrScan" asp-action="Index" class="btn btn-warning">
+                    <i class="bi bi-image me-1"></i>Quét OCR
+                </a>
+                <a asp-controller="BankAccountChecker" asp-action="Index" class="btn btn-outline-danger">
+                    <i class="bi bi-bank me-1"></i>Tra cứu NH
+                </a>
+                <a asp-controller="UrlScanner" asp-action="Index" class="btn btn-outline-primary">
+                    <i class="bi bi-link-45deg me-1"></i>Quét URL
+                </a>
+            </div>
+        </section>
+    }
 
-                    @if (User.Identity?.IsAuthenticated == true)
-                    {
-                        <div class="alert alert-info text-start p-3 mb-4">
-                            <h6 class="fw-bold mb-2"><i class="bi bi-bank me-2"></i>Thông tin chuyển khoản</h6>
-                            <p class="mb-1">Ngân hàng: <strong>MB Bank</strong></p>
-                            <p class="mb-1">Tên chủ sở hữu: <strong>Ho Dac Hiep</strong></p>
-                            <p class="mb-1">Số tài khoản: <strong class="text-danger fs-5">0348059277</strong></p>
-                            <p class="mb-1">Số tiền: <strong>0đ</strong></p>
-                            <p class="mb-0">Nội dung: <strong>NUS @User.Identity.Name</strong></p>
-                            <div class="text-center mt-3">
-                                <img src="https://img.vietqr.io/image/MB-0348059277-compact2.png?amount=0&addInfo=NUS%20@User.Identity.Name&accountName=HO%20DAC%20HIEP" alt="QR Code" class="img-fluid rounded shadow-sm" style="max-width: 200px;" />
+    <section class="row g-4 premium-pricing-row justify-content-center">
+        <div class="col-lg-5">
+            <div class="pricing-card pricing-card-free h-100">
+                <div class="pricing-card-head">
+                    <span class="pricing-tier">Cơ bản</span>
+                    <h3 class="pricing-name">Miễn phí</h3>
+                    <p class="pricing-tagline">Đủ dùng cho quét URL hàng ngày</p>
+                    <div class="pricing-price">
+                        <span class="pricing-amount">0đ</span>
+                        <span class="pricing-period">mãi mãi</span>
+                    </div>
+                </div>
+                <ul class="pricing-features">
+                    <li><i class="bi bi-check2"></i>Quét URL & phân tích rủi ro</li>
+                    <li><i class="bi bi-check2"></i>Quét hàng loạt (CSV, Excel, PDF)</li>
+                    <li><i class="bi bi-check2"></i>Quét mã QR chứa URL</li>
+                    <li><i class="bi bi-check2"></i>Lịch sử quét & xuất báo cáo</li>
+                    <li><i class="bi bi-check2"></i>Báo cáo lừa đảo cộng đồng</li>
+                    <li><i class="bi bi-check2"></i>Kiểm tra chéo Google Safe Browsing</li>
+                    <li class="muted"><i class="bi bi-dash"></i>OCR quét ảnh</li>
+                    <li class="muted"><i class="bi bi-dash"></i>Tra cứu blacklist ngân hàng</li>
+                </ul>
+                @if (!isLoggedIn)
+                {
+                    <a asp-controller="Account" asp-action="Register" class="btn btn-outline-secondary w-100 pricing-cta">
+                        Đăng ký miễn phí
+                    </a>
+                }
+                else if (!isPremium)
+                {
+                    <span class="pricing-current-label"><i class="bi bi-circle-fill me-1"></i>Gói hiện tại</span>
+                }
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="pricing-card pricing-card-pro h-100">
+                <span class="pricing-ribbon">Đề xuất</span>
+                <div class="pricing-card-head">
+                    <span class="pricing-tier text-warning">Premium</span>
+                    <h3 class="pricing-name">Pro</h3>
+                    <p class="pricing-tagline">Dành cho người cần phòng chống scam chuyên sâu</p>
+                    <div class="pricing-price">
+                        <span class="pricing-amount">0đ</span>
+                        <span class="pricing-period">giai đoạn thử nghiệm</span>
+                    </div>
+                    <p class="pricing-note small mb-0">Giá chính thức dự kiến: <s class="text-muted">49.000đ/tháng</s></p>
+                </div>
+                <ul class="pricing-features">
+                    <li><i class="bi bi-check2"></i><strong>Tất cả tính năng Cơ bản</strong></li>
+                    <li class="highlight"><i class="bi bi-check2-circle-fill"></i><strong>OCR</strong> — đọc URL/link từ ảnh SMS, email, screenshot</li>
+                    <li class="highlight"><i class="bi bi-check2-circle-fill"></i><strong>Tra cứu NH</strong> — đối chiếu STK với blacklist cộng đồng</li>
+                    <li><i class="bi bi-check2"></i>Phù hợp kiểm tra tin nhắn & hóa đơn giả</li>
+                    <li><i class="bi bi-check2"></i>Hỗ trợ ưu tiên qua hệ thống góp ý</li>
+                </ul>
+
+                @if (isPremium)
+                {
+                    <span class="pricing-current-label pricing-current-pro">
+                        <i class="bi bi-star-fill me-1"></i>Đang sử dụng
+                    </span>
+                }
+                else if (isLoggedIn)
+                {
+                    <button type="button" class="btn btn-warning w-100 pricing-cta fw-bold" data-bs-toggle="collapse" data-bs-target="#premiumCheckout">
+                        <i class="bi bi-lightning-charge-fill me-1"></i>Nâng cấp ngay
+                    </button>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="/Premium" class="btn btn-warning w-100 pricing-cta fw-bold">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập để nâng cấp
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+
+    @if (isLoggedIn && !isPremium)
+    {
+        <section class="collapse" id="premiumCheckout">
+            <div class="premium-checkout">
+                <div class="row g-4 align-items-center">
+                    <div class="col-md-5 text-center">
+                        <div class="premium-qr-wrap">
+                            <img src="https://img.vietqr.io/image/MB-0348059277-compact2.png?amount=0&addInfo=@Uri.EscapeDataString(transferNote)&accountName=HO%20DAC%20HIEP"
+                                 alt="Mã QR chuyển khoản"
+                                 class="premium-qr-img"
+                                 width="220"
+                                 height="220"
+                                 loading="lazy"
+                                 decoding="async" />
+                        </div>
+                        <p class="small text-muted mt-2 mb-0">Quét mã QR bằng app ngân hàng</p>
+                    </div>
+                    <div class="col-md-7">
+                        <h3 class="h5 fw-bold mb-3"><i class="bi bi-credit-card-2-front me-2"></i>Thanh toán (demo)</h3>
+                        <div class="premium-bank-info">
+                            <div class="row g-2 small">
+                                <div class="col-sm-4 text-muted">Ngân hàng</div>
+                                <div class="col-sm-8 fw-semibold">MB Bank</div>
+                                <div class="col-sm-4 text-muted">Số tài khoản</div>
+                                <div class="col-sm-8 fw-semibold font-monospace">0348059277</div>
+                                <div class="col-sm-4 text-muted">Chủ tài khoản</div>
+                                <div class="col-sm-8 fw-semibold">HO DAC HIEP</div>
+                                <div class="col-sm-4 text-muted">Nội dung CK</div>
+                                <div class="col-sm-8"><code class="premium-transfer-code">@transferNote</code></div>
                             </div>
                         </div>
-
+                        <p class="small text-muted mt-3 mb-3">
+                            Sau khi chuyển khoản, nhấn nút bên dưới để kích hoạt Premium (mô phỏng — dùng cho môi trường thử nghiệm).
+                        </p>
                         <form asp-action="CheckoutMock" method="post">
-                            <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold shadow-sm" id="btnPay">
-                                <i class="bi bi-check-circle me-2"></i> Tôi đã chuyển khoản xong
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-warning btn-lg fw-bold" id="btnPay">
+                                <i class="bi bi-check-circle me-2"></i>Tôi đã chuyển khoản xong
                             </button>
                         </form>
-                    }
-                    else
-                    {
-                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="/Premium" class="btn btn-outline-dark btn-lg w-100 fw-bold">
-                            Đăng nhập để Nâng cấp
-                        </a>
-                    }
+                    </div>
                 </div>
             </div>
-        }
-    </div>
+        </section>
+    }
+
+    <section class="premium-benefits">
+        <h2 class="text-center fw-bold mb-4">Vì sao nên nâng cấp?</h2>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="premium-benefit-card">
+                    <div class="premium-benefit-icon bg-warning-subtle text-warning">
+                        <i class="bi bi-image"></i>
+                    </div>
+                    <h3 class="h6 fw-bold">OCR thông minh</h3>
+                    <p class="small text-muted mb-0">Chụp ảnh tin nhắn, email hoặc bill — hệ thống trích URL và quét rủi ro tự động, không cần gõ tay.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="premium-benefit-card">
+                    <div class="premium-benefit-icon bg-danger-subtle text-danger">
+                        <i class="bi bi-bank2"></i>
+                    </div>
+                    <h3 class="h6 fw-bold">Chặn STK lừa đảo</h3>
+                    <p class="small text-muted mb-0">Tra cứu số tài khoản với dữ liệu báo cáo từ cộng đồng trước khi chuyển tiền.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="premium-benefit-card">
+                    <div class="premium-benefit-icon bg-primary-subtle text-primary">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h3 class="h6 fw-bold">Bảo vệ toàn diện</h3>
+                    <p class="small text-muted mb-0">Kết hợp quét URL, OCR và tra NH — ba lớp kiểm tra giúp bạn an tâm hơn khi online.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="premium-faq">
+        <h2 class="text-center fw-bold mb-4">Câu hỏi thường gặp</h2>
+        <div class="accordion accordion-flush premium-accordion" id="premiumFaq">
+            <div class="accordion-item">
+                <h3 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                        Premium khác gì gói miễn phí?
+                    </button>
+                </h3>
+                <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#premiumFaq">
+                    <div class="accordion-body small text-muted">
+                        Gói miễn phí đã bao gồm quét URL, quét hàng loạt, QR và lịch sử. Premium thêm OCR đọc ảnh và tra cứu blacklist tài khoản ngân hàng — hai tính năng hữu ích khi xử lý tin nhắn/hóa đơn giả mạo.
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h3 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                        Thanh toán hoạt động thế nào?
+                    </button>
+                </h3>
+                <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#premiumFaq">
+                    <div class="accordion-body small text-muted">
+                        Hiện tại hệ thống đang ở giai đoạn thử nghiệm với mức 0đ. Bạn chuyển khoản theo hướng dẫn (hoặc bỏ qua) rồi nhấn xác nhận để kích hoạt ngay.
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h3 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                        Google Safe Browsing có trong Premium không?
+                    </button>
+                </h3>
+                <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#premiumFaq">
+                    <div class="accordion-body small text-muted">
+                        Google Safe Browsing là kiểm tra chéo có sẵn ở cả hai gói — không cần Premium. Premium tập trung vào OCR và tra cứu ngân hàng.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
 
 @section Scripts {
     <script>
-        document.getElementById('btnPay')?.addEventListener('click', function() {
-            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
-            this.classList.add('disabled');
+        document.getElementById('btnPay')?.addEventListener('click', function () {
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang kích hoạt...';
+            this.disabled = true;
         });
     </script>
 }

@@ -17,39 +17,36 @@
         </p>
     </div>
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Total Scans</p>
-                    <h3 class="fw-bold">@total</h3>
+    <div class="row g-3 mb-4" id="scanStatCards">
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 stat-card stat-total">
+                <div class="card-body py-3">
+                    <p class="text-muted mb-1 small">Tổng lượt quét</p>
+                    <h3 class="fw-bold mb-0" id="statTotal">@total</h3>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Online</p>
-                    <h3 class="fw-bold text-success">@online</h3>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 stat-card stat-online">
+                <div class="card-body py-3">
+                    <p class="text-muted mb-1 small">Online</p>
+                    <h3 class="fw-bold text-success mb-0" id="statOnline">@online</h3>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Warning</p>
-                    <h3 class="fw-bold text-warning">@warning</h3>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 stat-card stat-warning">
+                <div class="card-body py-3">
+                    <p class="text-muted mb-1 small">Warning</p>
+                    <h3 class="fw-bold text-warning mb-0" id="statWarning">@warning</h3>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Suspicious</p>
-                    <h3 class="fw-bold text-danger">@suspicious</h3>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm border-0 stat-card stat-suspicious">
+                <div class="card-body py-3">
+                    <p class="text-muted mb-1 small">Suspicious</p>
+                    <h3 class="fw-bold text-danger mb-0" id="statSuspicious">@suspicious</h3>
                 </div>
             </div>
         </div>

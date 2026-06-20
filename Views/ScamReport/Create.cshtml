@@ -1,116 +1,105 @@
 @model NetURLScanner.Models.ScamReport
-
 @{
     ViewData["Title"] = "Báo cáo Lừa đảo";
 }
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-8">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-danger text-white text-center py-3">
-                <h4 class="mb-0 fw-bold"><i class="bi bi-shield-exclamation me-2"></i>Báo Cáo Lừa Đảo</h4>
-            </div>
-            <div class="card-body p-4">
-                <p class="text-muted text-center mb-4">
-                    Hãy báo cáo các trang web nguy hiểm hoặc tài khoản ngân hàng lừa đảo để bảo vệ cộng đồng.
-                </p>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card shadow border-0 scam-report-card overflow-hidden">
+                <div class="card-header bg-danger text-white py-4 text-center border-0">
+                    <i class="bi bi-shield-exclamation display-6 d-block mb-2"></i>
+                    <h3 class="fw-bold mb-1">Báo cáo lừa đảo</h3>
+                    <p class="mb-0 small opacity-75">Giúp cộng đồng tránh URL / tài khoản nguy hiểm</p>
+                </div>
 
-                @if (User?.Identity?.IsAuthenticated != true)
-                {
-                    <div class="text-center py-5">
-                        <i class="bi bi-lock-fill text-muted mb-3 d-block" style="font-size: 3rem;"></i>
-                        <h5 class="fw-bold mb-3">Yêu cầu đăng nhập</h5>
-                        <p class="text-muted mb-4">Bạn cần đăng nhập vào hệ thống để có thể gửi báo cáo lừa đảo. Điều này giúp chúng tôi ngăn chặn spam và đảm bảo chất lượng thông tin.</p>
-                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="/ScamReport/Create" class="btn btn-primary btn-lg fw-bold px-4">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Đi đến trang đăng nhập
-                        </a>
-                    </div>
-                }
-                else
-                {
-
-                <form asp-action="Create" method="post" id="scamReportForm">
-                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-                    <div class="mb-4 text-center">
-                        <div class="btn-group" role="group" aria-label="Loại báo cáo">
-                            <input type="radio" class="btn-check" name="ReportType" id="typeUrl" value="Url" checked autocomplete="off">
-                            <label class="btn btn-outline-danger" for="typeUrl"><i class="bi bi-globe"></i> Trang web / IP</label>
-
-                            <input type="radio" class="btn-check" name="ReportType" id="typeBank" value="BankAccount" autocomplete="off">
-                            <label class="btn btn-outline-danger" for="typeBank"><i class="bi bi-bank"></i> Tài khoản Ngân hàng</label>
+                <div class="card-body p-4 p-md-5">
+                    @if (User?.Identity?.IsAuthenticated != true)
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-lock fs-1 text-muted d-block mb-3"></i>
+                            <h5 class="fw-bold">Đăng nhập để gửi báo cáo</h5>
+                            <p class="text-muted mb-4">Xác thực tài khoản giúp giảm spam và tăng độ tin cậy.</p>
+                            <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="/ScamReport/Create" class="btn btn-primary btn-lg px-4">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
+                            </a>
                         </div>
-                    </div>
+                    }
+                    else
+                    {
+                        <form asp-action="Create" method="post" enctype="multipart/form-data" id="scamReportForm">
+                            @Html.AntiForgeryToken()
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
 
-                    <!-- URL / IP Section -->
-                    <div id="urlSection">
-                        <div class="mb-3">
-                            <label asp-for="UrlOrIp" class="form-label fw-bold"></label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light"><i class="bi bi-link-45deg"></i></span>
-                                <input asp-for="UrlOrIp" class="form-control" placeholder="Nhập URL hoặc địa chỉ IP (VD: luyenthi.com, 192.168.1.1)" />
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Loại báo cáo</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <input type="radio" class="btn-check" name="ReportType" id="typeUrl" value="Url" checked>
+                                    <label class="btn btn-outline-danger" for="typeUrl"><i class="bi bi-globe me-1"></i>Website / IP</label>
+                                    <input type="radio" class="btn-check" name="ReportType" id="typeBank" value="BankAccount">
+                                    <label class="btn btn-outline-danger" for="typeBank"><i class="bi bi-bank me-1"></i>Tài khoản NH</label>
+                                </div>
                             </div>
-                            <span asp-validation-for="UrlOrIp" class="text-danger small"></span>
-                        </div>
-                    </div>
 
-                    <!-- Bank Account Section -->
-                    <div id="bankSection" style="display: none;">
-                        <div class="mb-3">
-                            <label asp-for="BankId" class="form-label fw-bold"></label>
-                            <select asp-for="BankId" class="form-select mb-2" id="bankSelect">
-                                <option value="">-- Chọn ngân hàng --</option>
-                                <option value="OTHER">Khác (Tự nhập)</option>
-                                <!-- Rendered via JS -->
-                            </select>
-                            <input type="text" name="customBankName" id="customBankInput" class="form-control d-none" placeholder="Nhập tên ngân hàng của bạn" />
-                            <span asp-validation-for="BankId" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="BankAccountNumber" class="form-label fw-bold"></label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light"><i class="bi bi-123"></i></span>
-                                <input asp-for="BankAccountNumber" class="form-control" id="accountNumber" placeholder="Nhập số tài khoản" />
-                                <button type="button" class="btn btn-secondary" id="btnLookup">Kiểm tra</button>
+                            <div id="urlSection" class="mb-4">
+                                <label asp-for="UrlOrIp" class="form-label fw-bold">URL hoặc IP đáng ngờ</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                                    <input asp-for="UrlOrIp" class="form-control" placeholder="https://... hoặc 192.168.x.x" />
+                                </div>
+                                <span asp-validation-for="UrlOrIp" class="text-danger small"></span>
                             </div>
-                            <span asp-validation-for="BankAccountNumber" class="text-danger small"></span>
-                        </div>
 
-                        <div class="mb-3">
-                            <label asp-for="BankAccountOwnerName" class="form-label fw-bold"></label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
-                                <input asp-for="BankAccountOwnerName" class="form-control" id="accountOwnerName" placeholder="Tên chủ tài khoản (Sẽ tự động điền)" readonly />
+                            <div id="bankSection" class="mb-4" hidden>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label asp-for="BankId" class="form-label fw-bold">Ngân hàng</label>
+                                        <select asp-for="BankId" class="form-select" id="bankSelect">
+                                            <option value="">-- Chọn --</option>
+                                            <option value="OTHER">Khác</option>
+                                        </select>
+                                        <input type="text" name="customBankName" id="customBankInput" class="form-control mt-2 d-none" placeholder="Tên NH" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="BankAccountNumber" class="form-label fw-bold">Số tài khoản</label>
+                                        <input asp-for="BankAccountNumber" class="form-control" id="accountNumber" />
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label asp-for="BankAccountOwnerName" class="form-label fw-bold">Tên chủ TK</label>
+                                        <input asp-for="BankAccountOwnerName" class="form-control" id="accountOwnerName" readonly />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">&nbsp;</label>
+                                        <button type="button" class="btn btn-outline-secondary w-100" id="btnLookup">Tra tên TK</button>
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="AmountLost" class="form-label fw-bold">Thiệt hại (VNĐ)</label>
+                                        <input asp-for="AmountLost" type="number" class="form-control" min="0" placeholder="Tùy chọn" />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="mb-3">
-                            <label asp-for="AmountLost" class="form-label fw-bold"></label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light">VNĐ</span>
-                                <input asp-for="AmountLost" type="number" class="form-control" placeholder="Số tiền bạn bị lừa (tùy chọn)" />
+                            <div class="mb-4">
+                                <label asp-for="Evidence" class="form-label fw-bold">Mô tả & bằng chứng</label>
+                                <textarea asp-for="Evidence" class="form-control" rows="4" placeholder="Mô tả ngắn gọn: kênh lừa đảo, nội dung tin nhắn, số tiền..."></textarea>
+                                <span asp-validation-for="Evidence" class="text-danger small"></span>
                             </div>
-                        </div>
-                    </div>
 
-                    <div class="mb-4">
-                        <label asp-for="Evidence" class="form-label fw-bold">Bằng chứng / Lý do</label>
-                        <textarea asp-for="Evidence" class="form-control" rows="5" placeholder="Mô tả chi tiết sự việc, dán đường dẫn (link) hình ảnh bằng chứng, ảnh chụp màn hình tin nhắn hoặc biên lai chuyển tiền vào đây..."></textarea>
-                        <span asp-validation-for="Evidence" class="text-danger small"></span>
-                        <div class="form-text">Vui lòng cung cấp thông tin càng chi tiết càng tốt để quản trị viên có thể xác minh nhanh chóng.</div>
-                    </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Ảnh bằng chứng <span class="text-muted fw-normal">(tối đa 5 ảnh, 5MB/ảnh)</span></label>
+                                <input type="file" name="evidenceImages" class="form-control" accept="image/jpeg,image/png,image/webp" multiple id="evidenceInput" />
+                                <div id="evidencePreview" class="evidence-preview"></div>
+                            </div>
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-danger btn-lg fw-bold">
-                            <i class="bi bi-send-fill me-2"></i>Gửi Báo Cáo
-                        </button>
-                        <a asp-controller="Home" asp-action="Landing" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-2"></i>Quay lại trang chủ
-                        </a>
-                    </div>
-                </form>
-                }
+                            <div class="d-grid gap-2 d-md-flex">
+                                <button type="submit" class="btn btn-danger btn-lg flex-grow-1">
+                                    <i class="bi bi-send-fill me-2"></i>Gửi báo cáo
+                                </button>
+                                <a asp-controller="Home" asp-action="Landing" class="btn btn-outline-secondary btn-lg">Hủy</a>
+                            </div>
+                        </form>
+                    }
+                </div>
             </div>
         </div>
     </div>
@@ -118,104 +107,18 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-
+    <script src="~/js/bank-select.js" asp-append-version="true" defer></script>
+    <script src="~/js/scam-report-form.js" asp-append-version="true" defer></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const typeUrl = document.getElementById('typeUrl');
-            const typeBank = document.getElementById('typeBank');
-            const urlSection = document.getElementById('urlSection');
-            const bankSection = document.getElementById('bankSection');
-            const bankSelect = document.getElementById('bankSelect');
-            const btnLookup = document.getElementById('btnLookup');
-            const accountNumber = document.getElementById('accountNumber');
-            const accountOwnerName = document.getElementById('accountOwnerName');
-
-            const customBankInput = document.getElementById('customBankInput');
-
-            // Toggle sections
-            function toggleSections() {
-                if (typeBank.checked) {
-                    urlSection.style.display = 'none';
-                    bankSection.style.display = 'block';
-                } else {
-                    urlSection.style.display = 'block';
-                    bankSection.style.display = 'none';
-                }
-            }
-
-            typeUrl.addEventListener('change', toggleSections);
-            typeBank.addEventListener('change', toggleSections);
-
-            // Fetch bank list
-            fetch('/api/v1/banks')
-                .then(res => res.json())
-                .then(data => {
-                    let banks = data && data.length > 0 ? data : [
-                        { bin: "970422", shortName: "MBBank", name: "Ngân hàng Quân đội" },
-                        { bin: "970436", shortName: "Vietcombank", name: "Ngân hàng Ngoại thương Việt Nam" },
-                        { bin: "970415", shortName: "VietinBank", name: "Ngân hàng Công thương Việt Nam" },
-                        { bin: "970418", shortName: "BIDV", name: "Ngân hàng Đầu tư và Phát triển Việt Nam" },
-                        { bin: "970407", shortName: "Techcombank", name: "Ngân hàng Kỹ thương Việt Nam" },
-                        { bin: "970416", shortName: "ACB", name: "Ngân hàng Á Châu" }
-                    ];
-
-                    banks.forEach(bank => {
-                        let option = document.createElement('option');
-                        option.value = bank.bin; // Use Bin for VietQR lookup
-                        option.text = `[${bank.shortName}] ${bank.name}`;
-                        bankSelect.appendChild(option);
-                    });
-                })
-                .catch(err => console.error("Error fetching banks", err));
-
-            bankSelect.addEventListener('change', function() {
-                if (this.value === 'OTHER') {
-                    customBankInput.classList.remove('d-none');
-                    customBankInput.required = true;
-                    accountOwnerName.removeAttribute('readonly');
-                } else {
-                    customBankInput.classList.add('d-none');
-                    customBankInput.required = false;
-                    accountOwnerName.setAttribute('readonly', 'true');
-                }
-            });
-
-            // Lookup account name
-            btnLookup.addEventListener('click', function () {
-                const bankId = bankSelect.value;
-                const accNo = accountNumber.value.trim();
-
-                if (!bankId || !accNo) {
-                    alert('Vui lòng chọn Ngân hàng và nhập Số tài khoản trước khi kiểm tra!');
-                    return;
-                }
-                
-                if (bankId === 'OTHER') {
-                    alert('Không thể tự động tra cứu tên chủ tài khoản đối với ngân hàng "Khác". Vui lòng tự nhập.');
-                    return;
-                }
-
-                btnLookup.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang tải...';
-                btnLookup.disabled = true;
-                accountOwnerName.value = '';
-
-                fetch(`/api/v1/banks/lookup?bankId=${bankId}&accountNumber=${accNo}`)
-                    .then(res => {
-                        if (!res.ok) throw new Error('Not found');
-                        return res.json();
-                    })
-                    .then(data => {
-                        if (data && data.accountName) {
-                            accountOwnerName.value = data.accountName;
-                        }
-                    })
-                    .catch(err => {
-                        alert('Không tìm thấy thông tin tài khoản hoặc có lỗi xảy ra.');
-                    })
-                    .finally(() => {
-                        btnLookup.innerHTML = 'Kiểm tra';
-                        btnLookup.disabled = false;
-                    });
+        document.getElementById('evidenceInput')?.addEventListener('change', function () {
+            const box = document.getElementById('evidencePreview');
+            if (!box) return;
+            box.innerHTML = '';
+            [...this.files].slice(0, 5).forEach(f => {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(f);
+                img.alt = f.name;
+                box.appendChild(img);
             });
         });
     </script>

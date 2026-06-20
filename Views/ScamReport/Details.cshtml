@@ -55,16 +55,56 @@
                 <hr />
 
                 <div class="mb-3">
-                    <label class="text-muted fw-bold mb-2">URL / IP bị báo cáo:</label>
-                    <div class="p-3 bg-light rounded text-break font-monospace fw-bold text-danger border">
-                        @Model.UrlOrIp
-                    </div>
+                    <label class="text-muted fw-bold mb-2">Loại báo cáo:</label>
+                    <div>@(Model.ReportType == "BankAccount" ? "Tài khoản ngân hàng" : "Website / IP")</div>
                 </div>
+
+                @if (Model.ReportType == "BankAccount")
+                {
+                    <div class="mb-3">
+                        <label class="text-muted fw-bold mb-2">Ngân hàng / Số TK:</label>
+                        <div class="p-3 bg-light rounded border">
+                            <div><strong>@Model.BankId</strong> — @Model.BankAccountNumber</div>
+                            @if (!string.IsNullOrWhiteSpace(Model.BankAccountOwnerName))
+                            {
+                                <div class="text-muted small mt-1">Chủ TK: @Model.BankAccountOwnerName</div>
+                            }
+                            @if (Model.AmountLost.HasValue && Model.AmountLost > 0)
+                            {
+                                <div class="text-danger fw-semibold mt-1">Thiệt hại: @Model.AmountLost.Value.ToString("N0") VNĐ</div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="mb-3">
+                        <label class="text-muted fw-bold mb-2">URL / IP bị báo cáo:</label>
+                        <div class="p-3 bg-light rounded text-break font-monospace fw-bold text-danger border">
+                            @Model.UrlOrIp
+                        </div>
+                    </div>
+                }
 
                 <div class="mb-3">
                     <label class="text-muted fw-bold mb-2">Bằng chứng / Lý do:</label>
                     <div class="p-3 bg-light rounded text-break border" style="white-space: pre-wrap;">@Model.Evidence</div>
                 </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.EvidenceImagePaths))
+                {
+                    <div class="mb-3">
+                        <label class="text-muted fw-bold mb-2">Ảnh bằng chứng:</label>
+                        <div class="evidence-preview">
+                            @foreach (var path in Model.EvidenceImagePaths.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                <a href="@path.Trim()" target="_blank" rel="noopener">
+                                    <img src="@path.Trim()" alt="Bằng chứng" />
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
 
             </div>
             

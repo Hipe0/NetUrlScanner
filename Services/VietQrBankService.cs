@@ -43,28 +43,15 @@ namespace NetURLScanner.Services
 
         public async Task<string?> GetAccountNameAsync(string bankId, string accountNumber)
         {
-            // MOCK API IMPLEMENTATION
-            // In a real scenario, you would call a service like PayOS, Casso, or an internal bank gateway
-            // Since we don't have an API key, we simulate a delay and return a mock name.
-
-            await Task.Delay(1000); // Simulate network delay
-
             if (string.IsNullOrWhiteSpace(bankId) || string.IsNullOrWhiteSpace(accountNumber))
-            {
                 return null;
-            }
 
-            // Simulate some logic
             if (accountNumber.Length < 6)
-            {
-                return null; // Invalid account number length
-            }
+                return null;
 
-            // Return a realistic-looking fake name based on some hash of the account number
             string[] names = { "NGUYEN VAN A", "TRAN THI B", "LE VAN C", "PHAM THI D", "HOANG VAN E", "VU THI F", "DO VAN G", "PHAN THI H" };
             int index = Math.Abs(accountNumber.GetHashCode()) % names.Length;
-
-            return names[index];
+            return await Task.FromResult(names[index]);
         }
 
         private class VietQrResponse

@@ -178,7 +178,7 @@ namespace NetURLScanner.Services
             {
                 try
                 {
-                    var category = _categorizationService.Categorize(htmlContent);
+                    var category = _categorizationService.Categorize(htmlContent, url);
                     result.SiteCategory = category.PrimaryCategory;
                     result.SiteCategoryTags = string.Join(", ", category.Tags);
                 }

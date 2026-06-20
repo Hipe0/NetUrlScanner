@@ -12,12 +12,12 @@
             Danh sách toàn bộ các URL đã được quét và đánh giá rủi ro.
         </p>
 
-        <a asp-action="Index" class="btn btn-secondary">
-            Quay lại trang quét
-        </a>
-        <a href="/Scan/ExportCsv?search=@ViewBag.Search&status=@ViewBag.Status&riskLevel=@ViewBag.RiskLevel" class="btn btn-outline-success ms-2">
-            <i class="bi bi-file-earmark-spreadsheet me-1"></i>Xuất CSV
-        </a>
+        <a asp-action="Index" class="btn btn-secondary">Quay lại trang quét</a>
+        @{
+            ViewData["ExportBaseUrl"] = "/Scan";
+            ViewData["ExportQuery"] = $"search={ViewBag.Search}&status={ViewBag.Status}&riskLevel={ViewBag.RiskLevel}";
+        }
+        <partial name="_ExportDropdown" />
     </div>
 
     <div class="row mb-4">
@@ -216,10 +216,15 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer bg-light">
-                <a id="btnExportPdf" href="#" class="btn btn-success">
-                    <i class="bi bi-file-earmark-pdf me-1"></i> Xuất báo cáo PDF
-                </a>
+            <div class="modal-footer scan-modal-footer">
+                <div class="btn-group me-auto">
+                    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="bi bi-download me-1"></i>Xuất
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" id="btnExportPdf" href="#"><i class="bi bi-file-earmark-pdf me-2"></i>PDF (1 bản ghi)</a></li>
+                    </ul>
+                </div>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
             </div>
         </div>

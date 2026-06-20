@@ -81,7 +81,13 @@ if (googleAuth.Enabled &&
 
 builder.Services.AddScoped<UrlScannerService>();
 builder.Services.AddScoped<AdminSeedService>();
-builder.Services.AddHttpClient<GeminiChatService>();
+builder.Services.Configure<GeminiOptions>(
+    builder.Configuration.GetSection(GeminiOptions.SectionName));
+
+builder.Services.AddHttpClient<GeminiChatService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(20);
+});
 builder.Services.AddScoped<CmsSeedService>();
 builder.Services.AddScoped<ContentCategorizationService>();
 builder.Services.AddScoped<GoogleSafeBrowsingService>();

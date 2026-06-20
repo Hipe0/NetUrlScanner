@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace NetURLScanner.Models
 {
+    [Index(nameof(ReportType), nameof(BankId), nameof(BankAccountNumber), nameof(Status))]
     public class ScamReport
     {
         public int Id { get; set; }
@@ -13,9 +15,11 @@ namespace NetURLScanner.Models
         [Display(Name = "URL hoặc IP lừa đảo")]
         public string? UrlOrIp { get; set; }
 
+        [StringLength(20)]
         [Display(Name = "Ngân hàng")]
-        public string? BankId { get; set; } // Bin or Code of the bank
+        public string? BankId { get; set; }
 
+        [StringLength(30)]
         [Display(Name = "Số tài khoản")]
         public string? BankAccountNumber { get; set; }
 
@@ -31,6 +35,9 @@ namespace NetURLScanner.Models
 
         public int? UserId { get; set; }
         public User? User { get; set; }
+
+        [StringLength(1000)]
+        public string? EvidenceImagePaths { get; set; }
 
         [Display(Name = "Ngày báo cáo")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;

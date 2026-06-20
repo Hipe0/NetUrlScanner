@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
 using NetURLScanner.Services;
 using System.Security.Claims;
@@ -97,6 +98,8 @@ public class OcrScanController : AppControllerBase
                 return View(model);
             }
 
+            var pendingScans = new List<NetURLScanner.Models.UrlScan>();
+
             foreach (var url in urls)
             {
                 try
@@ -104,7 +107,7 @@ public class OcrScanController : AppControllerBase
                     var scan = await _scannerService.ScanAsync(url);
                     scan.UserId = userId;
                     _context.UrlScans.Add(scan);
-                    await _context.SaveChangesAsync();
+                    pendingScans.Add(scan);
 
                     model.ScanResults.Add(new OcrScanResultItem
                     {
@@ -112,7 +115,6 @@ public class OcrScanController : AppControllerBase
                         Status = scan.Status,
                         RiskLevel = scan.RiskLevel,
                         RiskScore = scan.RiskScore,
-                        ScanId = scan.Id,
                         Success = true
                     });
                 }
@@ -124,6 +126,16 @@ public class OcrScanController : AppControllerBase
                         Success = false,
                         ErrorMessage = ex.Message
                     });
+                }
+            }
+
+            if (pendingScans.Count > 0)
+            {
+                await _context.SaveChangesAsync();
+                for (int i = 0, j = 0; i < model.ScanResults.Count; i++)
+                {
+                    if (!model.ScanResults[i].Success) continue;
+                    model.ScanResults[i].ScanId = pendingScans[j++].Id;
                 }
             }
 

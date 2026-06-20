@@ -66,9 +66,10 @@ namespace NetURLScanner.Controllers
 
             // Perform check in ScamReports
             var reports = await _context.ScamReports
-                .Where(r => r.ReportType == "BankAccount" 
-                         && r.BankId == bankId 
-                         && r.BankAccountNumber == bankAccountNumber 
+                .AsNoTracking()
+                .Where(r => r.ReportType == "BankAccount"
+                         && r.BankId == bankId
+                         && r.BankAccountNumber == bankAccountNumber
                          && r.Status == "Approved")
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();

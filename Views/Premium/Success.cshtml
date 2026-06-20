@@ -2,25 +2,44 @@
     ViewData["Title"] = "Thanh toán thành công";
 }
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-6 text-center">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-5">
-                <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
-                <h2 class="mt-4 fw-bold">Thanh toán thành công!</h2>
-                <p class="text-muted mt-3 mb-4">
-                    Cảm ơn bạn đã nâng cấp! Tài khoản của bạn đã trở thành tài khoản Premium. Bây giờ bạn có thể trải nghiệm toàn bộ các tính năng nâng cao của ứng dụng.
-                </p>
+<div class="premium-page">
+    <section class="text-center py-5">
+        <div class="premium-success-icon mb-3">
+            <i class="bi bi-check-circle-fill text-success"></i>
+        </div>
+        <h1 class="premium-hero-title mb-2">Chào mừng đến Pro!</h1>
+        <p class="premium-hero-lead mb-4">
+            Premium đã được kích hoạt. Bạn có thể dùng OCR và tra cứu ngân hàng ngay bây giờ.
+        </p>
 
-                <div class="d-grid gap-2">
-                    <a asp-controller="OcrScan" asp-action="Index" class="btn btn-warning btn-lg fw-bold">
-                        <i class="bi bi-camera me-2"></i> Trải nghiệm Quét Ảnh Ngay
-                    </a>
-                    <a asp-controller="BankAccountChecker" asp-action="Index" class="btn btn-outline-danger btn-lg fw-bold">
-                        <i class="bi bi-bank me-2"></i> Tra cứu Blacklist Ngân hàng
-                    </a>
-                </div>
+        <div class="row g-3 justify-content-center" style="max-width: 520px; margin: 0 auto;">
+            <div class="col-sm-6">
+                <a asp-controller="OcrScan" asp-action="Index" class="btn btn-warning btn-lg w-100 fw-bold">
+                    <i class="bi bi-image me-2"></i>Quét OCR
+                </a>
+            </div>
+            <div class="col-sm-6">
+                <a asp-controller="BankAccountChecker" asp-action="Index" class="btn btn-outline-danger btn-lg w-100 fw-bold">
+                    <i class="bi bi-bank me-2"></i>Tra cứu NH
+                </a>
+            </div>
+            <div class="col-12">
+                <a asp-controller="Premium" asp-action="Index" class="btn btn-link text-muted">Xem chi tiết gói Premium</a>
             </div>
         </div>
-    </div>
+    </section>
 </div>
+
+<style>
+    .premium-success-icon {
+        font-size: 4.5rem;
+        line-height: 1;
+        animation: premiumPop 0.5s ease-out;
+    }
+
+    @@keyframes premiumPop {
+        0% { transform: scale(0.5); opacity: 0; }
+        70% { transform: scale(1.08); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+</style>

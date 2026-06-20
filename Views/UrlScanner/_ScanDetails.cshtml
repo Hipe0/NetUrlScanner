@@ -1,15 +1,15 @@
 @model NetURLScanner.Models.UrlScan
 
-<div class="row g-3">
+<div class="row g-3 scan-details-grid">
     <div class="col-md-6">
-        <div class="p-3 bg-light rounded h-100">
-            <h6 class="fw-bold text-muted mb-3"><i class="bi bi-info-circle me-2"></i>Thông tin chung</h6>
-            <dl class="row mb-0">
-                <dt class="col-sm-5 text-muted">URL</dt>
-                <dd class="col-sm-7 text-break fw-semibold">@Model.Url</dd>
+        <div class="scan-detail-panel h-100">
+            <h6 class="scan-detail-title"><i class="bi bi-info-circle me-2"></i>Thông tin chung</h6>
+            <dl class="row mb-0 scan-detail-dl">
+                <dt class="col-5">URL</dt>
+                <dd class="col-7 text-break fw-semibold">@Model.Url</dd>
 
-                <dt class="col-sm-5 text-muted">Mức độ rủi ro</dt>
-                <dd class="col-sm-7">
+                <dt class="col-5">Mức độ rủi ro</dt>
+                <dd class="col-7">
                     @{
                         string badgeClass = Model.RiskLevel switch
                         {
@@ -22,48 +22,35 @@
                     <span class="badge @badgeClass">@Model.RiskLevel</span>
                 </dd>
 
-                <dt class="col-sm-5 text-muted">Điểm rủi ro</dt>
-                <dd class="col-sm-7">
-                    <span class="fw-bold fs-5">@Model.RiskScore</span> <span class="text-muted">/ 100</span>
-                </dd>
+                <dt class="col-5">Điểm rủi ro</dt>
+                <dd class="col-7"><span class="fw-bold fs-5">@Model.RiskScore</span> <span class="text-muted">/ 100</span></dd>
 
-                <dt class="col-sm-5 text-muted">Trạng thái kết nối</dt>
-                <dd class="col-sm-7">
+                <dt class="col-5">Trạng thái</dt>
+                <dd class="col-7">
                     @{
                         string statusClass = Model.Status switch
                         {
                             "Online" => "text-success fw-semibold",
                             "Redirect" => "text-primary fw-semibold",
                             "Client Error" => "text-warning fw-semibold",
-                            "Server Error" => "text-danger fw-semibold",
-                            "Offline" => "text-danger fw-semibold",
+                            "Server Error" or "Offline" => "text-danger fw-semibold",
                             _ => "text-muted"
                         };
                     }
                     <span class="@statusClass">@Model.Status</span>
                 </dd>
 
-                <dt class="col-sm-5 text-muted">Mã HTTP</dt>
-                <dd class="col-sm-7">@(Model.StatusCode?.ToString() ?? "N/A")</dd>
+                <dt class="col-5">Mã HTTP</dt>
+                <dd class="col-7">@(Model.StatusCode?.ToString() ?? "N/A")</dd>
 
-                <dt class="col-sm-5 text-muted">Thời gian quét</dt>
-                <dd class="col-sm-7">@Model.ScannedAt.ToString("dd/MM/yyyy HH:mm:ss")</dd>
+                <dt class="col-5">Thời gian quét</dt>
+                <dd class="col-7">@Model.ScannedAt.ToString("dd/MM/yyyy HH:mm:ss")</dd>
 
-                <dt class="col-sm-5 text-muted">Phân loại nội dung</dt>
-                <dd class="col-sm-7">
+                <dt class="col-5">Phân loại nội dung</dt>
+                <dd class="col-7">
                     @if (!string.IsNullOrEmpty(Model.SiteCategory))
                     {
                         <span class="badge bg-info text-dark">@Model.SiteCategory</span>
-                        @if (!string.IsNullOrEmpty(Model.SiteCategoryTags))
-                        {
-                            foreach (var tag in Model.SiteCategoryTags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                            {
-                                if (tag != Model.SiteCategory)
-                                {
-                                    <span class="badge bg-light text-dark border ms-1">@tag</span>
-                                }
-                            }
-                        }
                     }
                     else
                     {
@@ -71,12 +58,12 @@
                     }
                 </dd>
 
-                <dt class="col-sm-5 text-muted">Google Safe Browsing</dt>
-                <dd class="col-sm-7">
+                <dt class="col-5">Google Safe Browsing</dt>
+                <dd class="col-7">
                     @switch (Model.SafeBrowsingStatus)
                     {
                         case "Clean":
-                            <span class="badge bg-success"><i class="bi bi-shield-check me-1"></i>An toàn</span>
+                            <span class="badge bg-success" title="Kiểm tra chéo — không thay thế đánh giá rủi ro nội bộ"><i class="bi bi-shield-check me-1"></i>An toàn</span>
                             break;
                         case "Threat":
                             <span class="badge bg-danger"><i class="bi bi-shield-exclamation me-1"></i>@(Model.SafeBrowsingThreatType?.Replace("_", " ") ?? "Nguy hiểm")</span>
@@ -97,55 +84,52 @@
     </div>
 
     <div class="col-md-6">
-        <div class="p-3 bg-light rounded h-100">
-            <h6 class="fw-bold text-muted mb-3"><i class="bi bi-globe me-2"></i>Thông tin Server & Vị trí</h6>
-            <dl class="row mb-0">
-                <dt class="col-sm-5 text-muted">Bảo mật HTTPS</dt>
-                <dd class="col-sm-7">
+        <div class="scan-detail-panel h-100">
+            <h6 class="scan-detail-title"><i class="bi bi-globe me-2"></i>Server & Vị trí</h6>
+            <dl class="row mb-0 scan-detail-dl">
+                <dt class="col-5">HTTPS</dt>
+                <dd class="col-7">
                     @if (Model.IsHttps)
                     {
-                        <span class="text-success"><i class="bi bi-lock-fill me-1"></i>Có (An toàn)</span>
+                        <span class="text-success"><i class="bi bi-lock-fill me-1"></i>Có</span>
                     }
                     else
                     {
-                        <span class="text-danger"><i class="bi bi-unlock-fill me-1"></i>Không (Kém an toàn)</span>
+                        <span class="text-danger"><i class="bi bi-unlock-fill me-1"></i>Không</span>
                     }
                 </dd>
 
-                <dt class="col-sm-5 text-muted">Địa chỉ IP</dt>
-                <dd class="col-sm-7">@(string.IsNullOrEmpty(Model.IpAddress) ? "N/A" : Model.IpAddress)</dd>
+                <dt class="col-5">IP</dt>
+                <dd class="col-7">@(string.IsNullOrEmpty(Model.IpAddress) ? "N/A" : Model.IpAddress)</dd>
 
-                <dt class="col-sm-5 text-muted">Quốc gia</dt>
-                <dd class="col-sm-7">
+                <dt class="col-5">Quốc gia</dt>
+                <dd class="col-7">
                     @if (!string.IsNullOrEmpty(Model.CountryName))
                     {
                         @Model.CountryName
                         if (!string.IsNullOrEmpty(Model.CountryCode))
                         {
-                            <span class="ms-1">(<img src="https://flagcdn.com/16x12/@(Model.CountryCode.ToLower()).png" alt="@Model.CountryCode">)</span>
+                            <img class="ms-1 align-text-top" src="https://flagcdn.com/16x12/@(Model.CountryCode.ToLower()).png" alt="@Model.CountryCode" width="16" height="12" loading="lazy" />
                         }
                     }
-                    else
-                    {
-                        <span>N/A</span>
-                    }
+                    else { <span>N/A</span> }
                 </dd>
 
-                <dt class="col-sm-5 text-muted">Thành phố</dt>
-                <dd class="col-sm-7">@(string.IsNullOrEmpty(Model.City) ? "N/A" : Model.City)</dd>
+                <dt class="col-5">Thành phố</dt>
+                <dd class="col-7">@(string.IsNullOrEmpty(Model.City) ? "N/A" : Model.City)</dd>
 
-                <dt class="col-sm-5 text-muted">Nhà cung cấp (ISP)</dt>
-                <dd class="col-sm-7">@(string.IsNullOrEmpty(Model.Isp) ? "N/A" : Model.Isp)</dd>
+                <dt class="col-5">ISP</dt>
+                <dd class="col-7 text-break">@(string.IsNullOrEmpty(Model.Isp) ? "N/A" : Model.Isp)</dd>
             </dl>
         </div>
     </div>
 
     @if (!string.IsNullOrEmpty(Model.Reasons))
     {
-        <div class="col-12 mt-3">
-            <div class="p-3 rounded border border-danger bg-danger bg-opacity-10">
-                <h6 class="fw-bold text-danger mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Lý do đánh giá rủi ro</h6>
-                <ul class="mb-0 text-danger-emphasis ps-3">
+        <div class="col-12">
+            <div class="scan-risk-box">
+                <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Lý do đánh giá rủi ro</h6>
+                <ul class="mb-0 ps-3">
                     @foreach (var reason in Model.Reasons.Split(';', StringSplitOptions.RemoveEmptyEntries))
                     {
                         if (!string.IsNullOrWhiteSpace(reason))
@@ -160,31 +144,31 @@
 
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
-        <div class="col-12 mt-3">
-            <div class="p-3 rounded border border-secondary bg-secondary bg-opacity-10">
-                <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-bug-fill me-2"></i>Lỗi kết nối</h6>
+        <div class="col-12">
+            <div class="scan-detail-panel border-secondary">
+                <h6 class="fw-bold mb-2"><i class="bi bi-bug-fill me-2"></i>Lỗi kết nối</h6>
                 <p class="mb-0 font-monospace small">@Model.ErrorMessage</p>
             </div>
         </div>
     }
 
-    <div class="col-12 mt-3">
+    <div class="col-12">
         <partial name="_DomainVoteWidget" model="Model" />
     </div>
 
-    <div class="col-12 mt-3">
-        <div class="p-3 rounded border bg-body-tertiary">
-            <h6 class="fw-bold mb-3"><i class="bi bi-bookmark me-2"></i>Nhãn & Ghi chú cá nhân</h6>
+    <div class="col-12">
+        <div class="scan-detail-panel">
+            <h6 class="scan-detail-title"><i class="bi bi-bookmark me-2"></i>Nhãn & Ghi chú</h6>
             <div class="mb-2">
-                <label class="form-label small text-muted mb-1">Nhãn (tối đa 50 ký tự)</label>
-                <input type="text" id="scanUserLabel" class="form-control form-control-sm" maxlength="50" value="@Model.UserLabel" placeholder="vd: Cần kiểm tra lại" />
+                <label class="form-label small mb-1" for="scanUserLabel">Nhãn</label>
+                <input type="text" id="scanUserLabel" class="form-control form-control-sm" maxlength="50" value="@Model.UserLabel" />
             </div>
             <div class="mb-2">
-                <label class="form-label small text-muted mb-1">Ghi chú</label>
-                <textarea id="scanUserNotes" class="form-control form-control-sm" rows="3" maxlength="500" placeholder="Ghi chú riêng cho lượt quét này...">@Model.UserNotes</textarea>
+                <label class="form-label small mb-1" for="scanUserNotes">Ghi chú</label>
+                <textarea id="scanUserNotes" class="form-control form-control-sm" rows="2" maxlength="500">@Model.UserNotes</textarea>
             </div>
             <button type="button" class="btn btn-sm btn-primary" id="btnSaveNote" data-scan-id="@Model.Id">
-                <i class="bi bi-save me-1"></i>Lưu nhãn & ghi chú
+                <i class="bi bi-save me-1"></i>Lưu
             </button>
             <span id="noteSaveStatus" class="small ms-2 text-muted"></span>
         </div>

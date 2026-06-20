@@ -7,9 +7,8 @@ window.showToast = function (message, type = 'success') {
     }
 
     const toastId = 'toast-' + Date.now();
-    const typeClass = 'toast-' + type; // toast-success, toast-danger, toast-warning, toast-info
-    
-    // Choose icon based on type
+    const typeClass = 'toast-' + type;
+
     let iconClass = 'bi-info-circle-fill';
     if (type === 'success') iconClass = 'bi-check-circle-fill';
     else if (type === 'error' || type === 'danger') iconClass = 'bi-exclamation-triangle-fill';
@@ -29,23 +28,54 @@ window.showToast = function (message, type = 'success') {
 
     container.insertAdjacentHTML('beforeend', toastHtml);
     const toastEl = document.getElementById(toastId);
-    
-    // Initialize with Bootstrap
+
     if (window.bootstrap && window.bootstrap.Toast) {
         const toast = new bootstrap.Toast(toastEl);
         toast.show();
-
-        // Clean up DOM after hide
-        toastEl.addEventListener('hidden.bs.toast', () => {
-            toastEl.remove();
-        });
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
     } else {
-        // Fallback if bootstrap is not loaded yet
         toastEl.style.display = 'block';
         toastEl.style.opacity = '1';
-        setTimeout(() => {
-            toastEl.remove();
-        }, 4000);
+        setTimeout(() => toastEl.remove(), 4000);
     }
 };
 
+function initThemeToggle() {
+    const toggleBtn = document.getElementById('themeToggle');
+    if (!toggleBtn) return;
+
+    const icon = toggleBtn.querySelector('i');
+    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+
+    if (currentTheme === 'dark') {
+        icon?.classList.replace('bi-moon-fill', 'bi-sun-fill');
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        const html = document.documentElement;
+        const isDark = html.getAttribute('data-bs-theme') === 'dark';
+        const newTheme = isDark ? 'light' : 'dark';
+
+        html.setAttribute('data-bs-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+
+        if (icon) {
+            icon.classList.toggle('bi-moon-fill', newTheme === 'light');
+            icon.classList.toggle('bi-sun-fill', newTheme === 'dark');
+        }
+    });
+}
+
+function initFlashToasts() {
+    const body = document.body;
+    const success = body?.dataset.flashSuccess;
+    const error = body?.dataset.flashError;
+
+    if (success) window.showToast(success, 'success');
+    if (error) window.showToast(error, 'danger');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initThemeToggle();
+    initFlashToasts();
+});

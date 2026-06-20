@@ -342,6 +342,92 @@ namespace NetURLScanner.Controllers
         [Authorize(Roles = "Admin,Manager,User")]
         public async Task<IActionResult> ExportCsv(string? search, string? status, string? riskLevel)
         {
+            var scans = await GetFilteredScansAsync(search, status, riskLevel);
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Id,Url,Domain,Status,StatusCode,ResponseTimeMs,RiskLevel,RiskScore,Category,SafeBrowsing,Label,Notes,ScannedAt");
+            foreach (var s in scans)
+            {
+                sb.AppendLine($"{s.Id},\"{s.Url.Replace("\"", "\"\"")}\",{s.NormalizedDomain},{s.Status},{s.StatusCode},{s.ResponseTimeMs},{s.RiskLevel},{s.RiskScore},\"{s.SiteCategory}\",{s.SafeBrowsingStatus},\"{s.UserLabel}\",\"{s.UserNotes?.Replace("\"", "\"\"")}\",{s.ScannedAt:yyyy-MM-dd HH:mm:ss}");
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
+            return File(bytes, "text/csv", $"ScanHistory_{DateTime.Now:yyyyMMdd_HHmm}.csv");
+        }
+
+        [HttpGet("/Scan/ExportExcel")]
+        [Authorize(Roles = "Admin,Manager,User")]
+        public async Task<IActionResult> ExportExcel(string? search, string? status, string? riskLevel)
+        {
+            var scans = await GetFilteredScansAsync(search, status, riskLevel);
+            using var workbook = new ClosedXML.Excel.XLWorkbook();
+            var sheet = workbook.Worksheets.Add("Lich su quet");
+            var headers = new[] { "Id", "URL", "Domain", "Status", "HTTP", "TimeMs", "Risk", "Score", "Category", "SafeBrowsing", "Label", "Notes", "ScannedAt" };
+            for (int i = 0; i < headers.Length; i++)
+                sheet.Cell(1, i + 1).Value = headers[i];
+
+            int row = 2;
+            foreach (var s in scans)
+            {
+                sheet.Cell(row, 1).Value = s.Id;
+                sheet.Cell(row, 2).Value = s.Url;
+                sheet.Cell(row, 3).Value = s.NormalizedDomain;
+                sheet.Cell(row, 4).Value = s.Status;
+                sheet.Cell(row, 5).Value = s.StatusCode;
+                sheet.Cell(row, 6).Value = s.ResponseTimeMs;
+                sheet.Cell(row, 7).Value = s.RiskLevel;
+                sheet.Cell(row, 8).Value = s.RiskScore;
+                sheet.Cell(row, 9).Value = s.SiteCategory;
+                sheet.Cell(row, 10).Value = s.SafeBrowsingStatus;
+                sheet.Cell(row, 11).Value = s.UserLabel;
+                sheet.Cell(row, 12).Value = s.UserNotes;
+                sheet.Cell(row, 13).Value = s.ScannedAt;
+                row++;
+            }
+            sheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"ScanHistory_{DateTime.Now:yyyyMMdd_HHmm}.xlsx");
+        }
+
+        [HttpGet("/Scan/ExportHistoryPdf")]
+        [Authorize(Roles = "Admin,Manager,User")]
+        public async Task<IActionResult> ExportHistoryPdf(string? search, string? status, string? riskLevel)
+        {
+            var scans = await GetFilteredScansAsync(search, status, riskLevel);
+            using var stream = new MemoryStream();
+            using var writer = new iText.Kernel.Pdf.PdfWriter(stream);
+            using var pdf = new iText.Kernel.Pdf.PdfDocument(writer);
+            using var document = new iText.Layout.Document(pdf);
+
+            string fontPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "arial.ttf");
+            iText.Kernel.Font.PdfFont pdfFont;
+            try
+            {
+                pdfFont = iText.Kernel.Font.PdfFontFactory.CreateFont(fontPath, iText.IO.Font.PdfEncodings.IDENTITY_H);
+            }
+            catch
+            {
+                pdfFont = iText.Kernel.Font.PdfFontFactory.CreateFont(iText.IO.Font.Constants.StandardFonts.HELVETICA);
+            }
+            document.SetFont(pdfFont);
+            document.Add(new iText.Layout.Element.Paragraph("NETURLSCANNER - LICH SU QUET")
+                .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER).SetFontSize(16));
+            document.Add(new iText.Layout.Element.Paragraph($"Tong: {scans.Count} ban ghi\n"));
+
+            foreach (var s in scans.Take(200))
+            {
+                document.Add(new iText.Layout.Element.Paragraph(
+                    $"{s.Id}. {s.Url}\n   Risk: {s.RiskLevel} ({s.RiskScore}) | {s.Status} | {s.ScannedAt:dd/MM/yyyy HH:mm}"));
+            }
+
+            document.Close();
+            return File(stream.ToArray(), "application/pdf", $"ScanHistory_{DateTime.Now:yyyyMMdd_HHmm}.pdf");
+        }
+
+        private async Task<List<UrlScan>> GetFilteredScansAsync(string? search, string? status, string? riskLevel)
+        {
             var currentUserId = GetCurrentUserId();
             var isAdmin = User.IsInRole("Admin");
             var query = _context.UrlScans.AsNoTracking().AsQueryable();
@@ -355,17 +441,7 @@ namespace NetURLScanner.Controllers
             if (!string.IsNullOrWhiteSpace(riskLevel))
                 query = query.Where(x => x.RiskLevel == riskLevel);
 
-            var scans = await query.OrderByDescending(x => x.ScannedAt).Take(1000).ToListAsync();
-
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("Id,Url,Domain,Status,StatusCode,ResponseTimeMs,RiskLevel,RiskScore,Category,SafeBrowsing,Label,Notes,ScannedAt");
-            foreach (var s in scans)
-            {
-                sb.AppendLine($"{s.Id},\"{s.Url.Replace("\"", "\"\"")}\",{s.NormalizedDomain},{s.Status},{s.StatusCode},{s.ResponseTimeMs},{s.RiskLevel},{s.RiskScore},\"{s.SiteCategory}\",{s.SafeBrowsingStatus},\"{s.UserLabel}\",\"{s.UserNotes?.Replace("\"", "\"\"")}\",{s.ScannedAt:yyyy-MM-dd HH:mm:ss}");
-            }
-
-            var bytes = System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
-            return File(bytes, "text/csv", $"ScanHistory_{DateTime.Now:yyyyMMdd_HHmm}.csv");
+            return await query.OrderByDescending(x => x.ScannedAt).Take(1000).ToListAsync();
         }
 
         [HttpPost("/Scan/UpdateNote/{id}")]

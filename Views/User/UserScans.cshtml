@@ -211,10 +211,15 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer bg-light">
-                <a id="btnExportPdf" href="#" class="btn btn-success">
-                    <i class="bi bi-file-earmark-pdf me-1"></i> Xuất báo cáo PDF
-                </a>
+            <div class="modal-footer scan-modal-footer">
+                <div class="btn-group me-auto">
+                    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="bi bi-download me-1"></i>Xuất
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" id="btnExportPdf" href="#"><i class="bi bi-file-earmark-pdf me-2"></i>PDF (1 bản ghi)</a></li>
+                    </ul>
+                </div>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
             </div>
         </div>

@@ -1,89 +1,92 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using NetURLScanner.Options;
 
-namespace NetURLScanner.Services
+namespace NetURLScanner.Services;
+
+public class GeminiChatService
 {
-    public class GeminiChatService
+    private readonly HttpClient _httpClient;
+    private readonly GeminiOptions _options;
+
+    private const string SystemInstruction =
+        "Bạn là trợ lý NetURLScanner — hệ thống quét URL, chấm điểm rủi ro, OCR, tra cứu ngân hàng lừa đảo. " +
+        "Trả lời ngắn gọn bằng tiếng Việt, Markdown nhẹ. " +
+        "Hướng dẫn: Quét URL (menu Quét URL), Lịch sử/Dashboard (cần đăng nhập User), Whitelist/Blacklist (Manager), " +
+        "OCR & tra cứu NH (Premium), báo cáo lừa đảo (menu Trợ giúp). " +
+        "Không khẳng định URL chắc chắn an toàn/độc hại — chỉ điểm rủi ro tham khảo. " +
+        "Từ chối lịch sự câu hỏi không liên quan NetURLScanner.";
+
+    public GeminiChatService(HttpClient httpClient, IOptions<GeminiOptions> options)
     {
-        private readonly HttpClient _httpClient;
-        private readonly string _apiKey;
+        _httpClient = httpClient;
+        _options = options.Value;
+    }
 
-        private const string SystemInstruction = @"Bạn là một trợ lý ảo hỗ trợ người dùng của hệ thống NetURLScanner. Nhiệm vụ của bạn là hướng dẫn người dùng cách sử dụng trang web, giải thích các tính năng và trả lời các câu hỏi liên quan đến bảo mật URL.
+    public async Task<string> GenerateResponseAsync(string userMessage, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(_options.ApiKey))
+            return "Lỗi: chưa cấu hình Gemini API key (Gemini:ApiKey trong appsettings.Development.json).";
 
-Về NetURLScanner:
-Đây là hệ thống quét URL để kiểm tra trạng thái hoạt động, đo thời gian phản hồi và đánh giá mức độ rủi ro dựa trên các rule phân tích bảo mật.
-
-Các chức năng chính của website bao gồm:
-1. Quét URL cơ bản: Bất kỳ ai (kể cả khách) cũng có thể nhập URL để kiểm tra. Hệ thống sẽ trả về HTTP status code (200, 301, 404...), thời gian phản hồi, kiểm tra HTTPS và phân loại trạng thái.
-2. Đánh giá rủi ro: Hệ thống chấm điểm rủi ro (0-100). Dưới 25 là Safe (An toàn), 26-55 là Warning (Cảnh báo), trên 56 là Suspicious (Đáng ngờ).
-3. Phát hiện nâng cao: Phát hiện lookalike domain (vd: go0gle.com), punycode, TLD rủi ro (.xyz, .top), và các trang web liên quan đến cá cược/cờ bạc.
-4. Tra cứu thông tin IP: Tìm vị trí địa lý của máy chủ và hiển thị trên bản đồ.
-5. Quản lý tài khoản và Phân quyền:
-   - Guest: Chỉ có thể quét URL cơ bản.
-   - User: Có thể quét URL, xem Lịch sử quét (có lọc, phân trang, biểu đồ) và xuất báo cáo PDF.
-   - Manager: Quyền của User cộng thêm quản lý danh sách Whitelist (thương hiệu uy tín) và Blacklist (domain độc hại).
-   - Admin: Quyền của Manager cộng thêm quản lý phân quyền User và xem Swagger UI API.
-
-Quy tắc trả lời của bạn:
-- Luôn giữ thái độ thân thiện, lịch sự và chuyên nghiệp.
-- Trả lời ngắn gọn, đúng trọng tâm vào câu hỏi của người dùng. Trả lời bằng Markdown.
-- Nếu người dùng hỏi cách thực hiện một tính năng (ví dụ: xem lịch sử, xuất PDF, thêm blacklist), hãy giải thích rõ họ cần quyền gì (User, Manager, Admin) và hướng dẫn họ vào trang tương ứng trên thanh menu.
-- Hệ thống KHÔNG khẳng định tuyệt đối một URL là an toàn hay độc hại, nó chỉ cung cấp điểm rủi ro để tham khảo. Hãy nhắc nhở người dùng điều này nếu họ hỏi ""URL này có lừa đảo chắc chắn không?"".
-- Nếu người dùng hỏi các câu không liên quan đến hệ thống NetURLScanner, hãy từ chối lịch sự và nói rằng bạn chỉ hỗ trợ về hệ thống này.";
-
-        public GeminiChatService(HttpClient httpClient, IConfiguration configuration)
+        var requestBody = new Dictionary<string, object>
         {
-            _httpClient = httpClient;
-            _apiKey = configuration["Gemini:ApiKey"] ?? string.Empty;
+            ["system_instruction"] = new { parts = new[] { new { text = SystemInstruction } } },
+            ["contents"] = new[] { new { parts = new[] { new { text = userMessage } } } },
+            ["generationConfig"] = new
+            {
+                maxOutputTokens = _options.MaxOutputTokens,
+                temperature = 0.6
+            }
+        };
+
+        if (!string.IsNullOrWhiteSpace(_options.ThinkingLevel))
+        {
+            requestBody["thinkingConfig"] = new
+            {
+                thinkingLevel = _options.ThinkingLevel.ToUpperInvariant()
+            };
         }
 
-        public async Task<string> GenerateResponseAsync(string userMessage)
+        var model = string.IsNullOrWhiteSpace(_options.Model) ? "gemini-3.1-flash-lite" : _options.Model;
+        var requestUrl =
+            $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={Uri.EscapeDataString(_options.ApiKey)}";
+
+        try
         {
-            if (string.IsNullOrEmpty(_apiKey))
+            using var response = await _httpClient.PostAsJsonAsync(requestUrl, requestBody, cancellationToken);
+            var jsonResponse = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
             {
-                return "Lỗi: API Key chưa được cấu hình.";
+                var err = jsonResponse.TryGetProperty("error", out var errObj)
+                    ? errObj.GetProperty("message").GetString()
+                    : response.ReasonPhrase;
+                return $"Lỗi AI ({(int)response.StatusCode}): {err}";
             }
 
-            var requestBody = new
-            {
-                system_instruction = new
-                {
-                    parts = new[] { new { text = SystemInstruction } }
-                },
-                contents = new[]
-                {
-                    new { parts = new[] { new { text = userMessage } } }
-                }
-            };
-
-            var requestUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={_apiKey}";
-
-            try
-            {
-                var response = await _httpClient.PostAsJsonAsync(requestUrl, requestBody);
-                response.EnsureSuccessStatusCode();
-
-                var jsonResponse = await response.Content.ReadFromJsonAsync<JsonElement>();
-                var candidates = jsonResponse.GetProperty("candidates");
-                
-                if (candidates.GetArrayLength() > 0)
-                {
-                    var text = candidates[0]
-                        .GetProperty("content")
-                        .GetProperty("parts")[0]
-                        .GetProperty("text")
-                        .GetString();
-                    
-                    return text ?? "Không thể lấy câu trả lời từ AI.";
-                }
-
+            if (!jsonResponse.TryGetProperty("candidates", out var candidates) || candidates.GetArrayLength() == 0)
                 return "Không có nội dung trả về.";
-            }
-            catch (Exception ex)
+
+            var parts = candidates[0].GetProperty("content").GetProperty("parts");
+            foreach (var part in parts.EnumerateArray())
             {
-                return $"Lỗi kết nối tới AI: {ex.Message}";
+                if (part.TryGetProperty("text", out var textEl))
+                {
+                    var text = textEl.GetString();
+                    if (!string.IsNullOrWhiteSpace(text)) return text;
+                }
             }
+
+            return "Không thể lấy câu trả lời từ AI.";
+        }
+        catch (TaskCanceledException)
+        {
+            return "Lỗi: hết thời gian chờ phản hồi từ AI. Thử lại sau.";
+        }
+        catch (Exception ex)
+        {
+            return $"Lỗi kết nối tới AI: {ex.Message}";
         }
     }
 }

@@ -142,6 +142,28 @@
         if (widget) window.DomainVote.bind(widget);
     }
 
+    function updateStatCards(status, riskLevel) {
+        const bump = id => {
+            const card = document.getElementById(id)?.closest('.stat-card');
+            if (!card) return;
+            card.classList.remove('stat-bump');
+            void card.offsetWidth;
+            card.classList.add('stat-bump');
+        };
+
+        const inc = id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = String((parseInt(el.textContent, 10) || 0) + 1);
+            bump(id);
+        };
+
+        inc('statTotal');
+        if (status === 'Online') inc('statOnline');
+        if (riskLevel === 'Warning') inc('statWarning');
+        if (riskLevel === 'Suspicious') inc('statSuspicious');
+    }
+
     function prependToHistoryTable(data) {
         const tbody = document.querySelector('table.table tbody');
         if (!tbody) return;
@@ -315,6 +337,7 @@
 
                 animateGauge(data.riskScore, data.riskLevel);
                 initAjaxMap(data.latitude, data.longitude, data.ipAddress, data.countryName);
+                updateStatCards(data.status, data.riskLevel);
                 prependToHistoryTable(data);
             }
 

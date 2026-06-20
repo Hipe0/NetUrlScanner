@@ -1,0 +1,64 @@
+@{
+    ViewData["Title"] = "Quét mã QR";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-qr-code-scan me-2"></i>Quét mã QR chứa URL</h4>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted">Hướng camera hoặc upload ảnh QR — hệ thống trích URL và quét ngay.</p>
+                    <div id="qr-reader" class="rounded overflow-hidden mb-3" style="max-width:400px;margin:0 auto;"></div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Hoặc upload ảnh QR</label>
+                        <input type="file" id="qrFileInput" class="form-control" accept="image/*" />
+                    </div>
+                    <div id="qrResult" class="alert alert-info d-none"></div>
+                    <a id="qrScanLink" href="#" class="btn btn-primary d-none"><i class="bi bi-search me-1"></i>Quét URL này</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const resultEl = document.getElementById('qrResult');
+            const linkEl = document.getElementById('qrScanLink');
+
+            function showUrl(url) {
+                resultEl.textContent = 'URL: ' + url;
+                resultEl.classList.remove('d-none');
+                linkEl.href = '/Scan?url=' + encodeURIComponent(url);
+                linkEl.classList.remove('d-none');
+                window.location.href = linkEl.href;
+            }
+
+            if (typeof Html5Qrcode === 'undefined') return;
+
+            const scanner = new Html5Qrcode('qr-reader');
+            Html5Qrcode.getCameras().then(cameras => {
+                if (cameras.length) {
+                    scanner.start(cameras[0].id, { fps: 10, qrbox: 220 }, showUrl, () => {});
+                }
+            }).catch(() => {});
+
+            document.getElementById('qrFileInput')?.addEventListener('change', async e => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                    const url = await scanner.scanFile(file, true);
+                    showUrl(url);
+                } catch {
+                    resultEl.textContent = 'Không đọc được QR trong ảnh.';
+                    resultEl.classList.remove('d-none');
+                }
+            });
+        });
+    </script>
+}

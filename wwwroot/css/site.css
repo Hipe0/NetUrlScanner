@@ -927,6 +927,561 @@ main:has(.auth-page) {
     color: var(--bs-primary);
 }
 
+/* AI Chatbox */
+#ai-chatbox-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1060;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+#ai-chat-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--bs-primary);
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    transition: transform 0.2s ease;
+}
+
+#ai-chat-btn:hover {
+    transform: scale(1.06);
+}
+
+#ai-chat-window {
+    width: min(350px, calc(100vw - 32px));
+    height: min(480px, calc(100vh - 120px));
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+#ai-chat-header {
+    background-color: var(--bs-primary);
+    color: #fff;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+#ai-chat-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.25rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+#ai-chat-messages {
+    flex: 1;
+    padding: 14px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chat-msg {
+    max-width: 85%;
+    padding: 8px 12px;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.chat-msg.user {
+    background-color: var(--bs-primary);
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-msg.bot {
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+
+.chat-msg.bot p:last-child {
+    margin-bottom: 0;
+}
+
+#ai-chat-input-area {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid var(--bs-border-color);
+    flex-shrink: 0;
+}
+
+#ai-chat-input {
+    flex: 1;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 20px;
+    padding: 8px 14px;
+    outline: none;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+#ai-chat-send {
+    background: none;
+    border: none;
+    color: var(--bs-primary);
+    font-size: 1.2rem;
+    margin-left: 8px;
+    cursor: pointer;
+}
+
+#ai-chat-send:disabled {
+    color: var(--bs-secondary-color);
+    cursor: not-allowed;
+}
+
+.typing-indicator {
+    font-size: 0.8rem;
+    color: var(--bs-secondary-color);
+    font-style: italic;
+    padding: 0 14px 8px;
+}
+
+/* Feature cards (Premium, Bank checker) */
+.feature-hero-card .card-header {
+    border-bottom: none;
+}
+
+.premium-qr-img {
+    max-width: 220px;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: contain;
+}
+
+/* Premium pricing page */
+.premium-page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding-bottom: 3rem;
+}
+
+.premium-hero {
+    position: relative;
+    padding: 2.5rem 1rem 2rem;
+    margin-bottom: 2rem;
+}
+
+.premium-hero-glow {
+    position: absolute;
+    inset: -20% 10% auto;
+    height: 200px;
+    background: radial-gradient(ellipse at center, rgba(var(--bs-warning-rgb), 0.22), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.premium-hero > *:not(.premium-hero-glow) {
+    position: relative;
+    z-index: 1;
+}
+
+.premium-badge {
+    display: inline-block;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, rgba(var(--bs-warning-rgb), 0.25), rgba(var(--bs-warning-rgb), 0.08));
+    border: 1px solid rgba(var(--bs-warning-rgb), 0.45);
+    color: var(--bs-warning);
+    margin-bottom: 1rem;
+}
+
+.premium-hero-title {
+    font-size: clamp(1.75rem, 4vw, 2.35rem);
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+    text-wrap: balance;
+}
+
+.premium-hero-lead {
+    max-width: 36rem;
+    margin: 0 auto;
+    color: var(--bs-secondary-color);
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+.premium-active-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: 16px;
+    border: 1px solid rgba(var(--bs-success-rgb), 0.35);
+    background: linear-gradient(135deg, rgba(var(--bs-success-rgb), 0.12), rgba(var(--bs-success-rgb), 0.04));
+}
+
+.premium-active-icon {
+    font-size: 2.5rem;
+    color: var(--bs-success);
+    line-height: 1;
+}
+
+.premium-quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.pricing-card {
+    position: relative;
+    padding: 1.75rem 1.5rem 1.5rem;
+    border-radius: 18px;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pricing-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.pricing-card-free {
+    background: var(--bs-body-tertiary);
+}
+
+.pricing-card-pro {
+    border-color: rgba(var(--bs-warning-rgb), 0.55);
+    background: linear-gradient(180deg, rgba(var(--bs-warning-rgb), 0.1) 0%, var(--bs-body-bg) 45%);
+    box-shadow: 0 8px 40px rgba(var(--bs-warning-rgb), 0.12);
+}
+
+.pricing-ribbon {
+    position: absolute;
+    top: 1rem;
+    right: -0.35rem;
+    padding: 0.25rem 0.85rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #1a1a1a;
+    background: linear-gradient(135deg, #ffc107, #ffca2c);
+    border-radius: 6px 6px 0 6px;
+    box-shadow: 0 2px 8px rgba(var(--bs-warning-rgb), 0.4);
+}
+
+.pricing-tier {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--bs-secondary-color);
+}
+
+.pricing-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0.25rem 0 0;
+}
+
+.pricing-tagline {
+    font-size: 0.9rem;
+    color: var(--bs-secondary-color);
+    margin-bottom: 1rem;
+}
+
+.pricing-price {
+    margin-bottom: 0.5rem;
+}
+
+.pricing-amount {
+    font-size: 2.25rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.pricing-period {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--bs-secondary-color);
+    margin-top: 0.25rem;
+}
+
+.pricing-note {
+    color: var(--bs-secondary-color);
+}
+
+.pricing-features {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0;
+}
+
+.pricing-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.45rem 0;
+    font-size: 0.92rem;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+}
+
+.pricing-features li:last-child {
+    border-bottom: none;
+}
+
+.pricing-features li i {
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+    font-size: 1rem;
+}
+
+.pricing-features li.highlight {
+    color: var(--bs-body-color);
+    font-weight: 500;
+}
+
+.pricing-features li.highlight i {
+    color: var(--bs-warning);
+}
+
+.pricing-features li.muted {
+    color: var(--bs-secondary-color);
+    opacity: 0.75;
+}
+
+.pricing-cta {
+    margin-top: auto;
+}
+
+.pricing-current-label {
+    display: block;
+    text-align: center;
+    padding: 0.65rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--bs-secondary-color);
+    background: var(--bs-body-tertiary);
+    border: 1px dashed var(--bs-border-color);
+}
+
+.pricing-current-pro {
+    color: var(--bs-warning);
+    border-color: rgba(var(--bs-warning-rgb), 0.45);
+    background: rgba(var(--bs-warning-rgb), 0.1);
+}
+
+.premium-checkout {
+    margin: 2rem 0;
+    padding: 1.75rem;
+    border-radius: 18px;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-tertiary);
+}
+
+.premium-qr-wrap {
+    display: inline-block;
+    padding: 0.75rem;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+[data-bs-theme="dark"] .premium-qr-wrap {
+    background: #fff;
+}
+
+.premium-bank-info {
+    padding: 1rem 1.15rem;
+    border-radius: 12px;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+}
+
+.premium-transfer-code {
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    background: rgba(var(--bs-warning-rgb), 0.15);
+    color: var(--bs-body-color);
+    font-size: 0.85rem;
+}
+
+.premium-benefits,
+.premium-faq {
+    margin-top: 3rem;
+}
+
+.premium-benefit-card {
+    height: 100%;
+    padding: 1.25rem;
+    border-radius: 14px;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-tertiary);
+    transition: border-color 0.2s ease;
+}
+
+.premium-benefit-card:hover {
+    border-color: rgba(var(--bs-primary-rgb), 0.35);
+}
+
+.premium-benefit-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.premium-accordion .accordion-item {
+    border-radius: 12px !important;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    border: 1px solid var(--bs-border-color) !important;
+    background: var(--bs-body-tertiary);
+}
+
+.premium-accordion .accordion-button {
+    font-weight: 600;
+    font-size: 0.95rem;
+    background: transparent;
+    box-shadow: none;
+}
+
+.premium-accordion .accordion-button:not(.collapsed) {
+    color: var(--bs-primary);
+    background: rgba(var(--bs-primary-rgb), 0.06);
+}
+
+@media (max-width: 575.98px) {
+    .premium-active-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .premium-quick-actions {
+        margin-left: 0;
+        justify-content: center;
+    }
+
+    .pricing-card-pro {
+        margin-top: 0.5rem;
+    }
+}
+
+/* Scan detail modal panels — dark mode safe */
+.scan-detail-panel {
+    padding: 1rem 1.15rem;
+    border-radius: 12px;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-tertiary);
+}
+
+.scan-detail-title {
+    font-weight: 700;
+    color: var(--bs-secondary-color);
+    margin-bottom: 0.85rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.scan-detail-dl dt {
+    color: var(--bs-secondary-color);
+    font-size: 0.85rem;
+    margin-bottom: 0.35rem;
+}
+
+.scan-detail-dl dd {
+    margin-bottom: 0.65rem;
+    font-size: 0.95rem;
+}
+
+.scan-risk-box {
+    padding: 1rem 1.15rem;
+    border-radius: 12px;
+    border: 1px solid rgba(var(--bs-danger-rgb), 0.35);
+    background: rgba(var(--bs-danger-rgb), 0.08);
+    color: var(--bs-body-color);
+}
+
+.scan-risk-box h6 {
+    color: var(--bs-danger);
+}
+
+.modal-footer.scan-modal-footer {
+    background: var(--bs-body-tertiary);
+    border-top: 1px solid var(--bs-border-color);
+}
+
+.stat-card {
+    border-left: 4px solid var(--bs-border-color);
+    transition: transform 0.15s ease;
+}
+
+.stat-card.stat-total { border-left-color: var(--bs-primary); }
+.stat-card.stat-online { border-left-color: var(--bs-success); }
+.stat-card.stat-warning { border-left-color: var(--bs-warning); }
+.stat-card.stat-suspicious { border-left-color: var(--bs-danger); }
+
+.stat-card.stat-bump {
+    animation: statBump 0.45s ease;
+}
+
+@keyframes statBump {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+}
+
+.scam-report-card .evidence-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.scam-report-card .evidence-preview img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--bs-border-color);
+}
+
 @media (max-width: 768px) {
     .auth-page {
         padding: 16px 12px;
