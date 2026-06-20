@@ -74,6 +74,7 @@ namespace NetURLScanner.Controllers
                 FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName.Trim(),
                 Role = role,
                 IsActive = true,
+                IsPremium = (role == "Manager" || role == "Admin"),
                 CreatedAt = DateTime.Now
             };
             user.PasswordHash = hasher.HashPassword(user, password);
@@ -138,6 +139,10 @@ namespace NetURLScanner.Controllers
             }
 
             user.Role = role;
+            if (role == "Manager" || role == "Admin")
+            {
+                user.IsPremium = true;
+            }
             await _context.SaveChangesAsync();
             TempData["Success"] = $"Đã cập nhật quyền của {user.Email} thành {role}.";
             return RedirectToAction(nameof(Index));

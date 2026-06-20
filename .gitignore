@@ -40,5 +40,6 @@ wwwroot/uploads/
 # Tesseract language data (download per README)
 tessdata/*.traineddata
 
+# Development Settings
 # Secrets and developer settings
 appsettings.Development.json

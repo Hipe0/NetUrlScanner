@@ -88,6 +88,7 @@ builder.Services.AddScoped<GoogleSafeBrowsingService>();
 builder.Services.AddScoped<DomainVoteService>();
 builder.Services.AddScoped<OcrService>();
 builder.Services.AddScoped<UrlExtractionService>();
+builder.Services.AddHttpClient<IBankAccountLookupService, VietQrBankService>();
 
 var app = builder.Build();
 

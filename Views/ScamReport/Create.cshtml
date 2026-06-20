@@ -1,7 +1,7 @@
 @model NetURLScanner.Models.ScamReport
 
 @{
-    ViewData["Title"] = "Báo cáo trang web / IP lừa đảo";
+    ViewData["Title"] = "Báo cáo Lừa đảo";
 }
 
 <div class="row justify-content-center mt-5">
@@ -12,24 +12,91 @@
             </div>
             <div class="card-body p-4">
                 <p class="text-muted text-center mb-4">
-                    Nếu bạn phát hiện một trang web hoặc địa chỉ IP có dấu hiệu lừa đảo, giả mạo, hãy báo cáo cho chúng tôi để bảo vệ cộng đồng.
+                    Hãy báo cáo các trang web nguy hiểm hoặc tài khoản ngân hàng lừa đảo để bảo vệ cộng đồng.
                 </p>
 
-                <form asp-action="Create" method="post">
+                @if (User?.Identity?.IsAuthenticated != true)
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-lock-fill text-muted mb-3 d-block" style="font-size: 3rem;"></i>
+                        <h5 class="fw-bold mb-3">Yêu cầu đăng nhập</h5>
+                        <p class="text-muted mb-4">Bạn cần đăng nhập vào hệ thống để có thể gửi báo cáo lừa đảo. Điều này giúp chúng tôi ngăn chặn spam và đảm bảo chất lượng thông tin.</p>
+                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="/ScamReport/Create" class="btn btn-primary btn-lg fw-bold px-4">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Đi đến trang đăng nhập
+                        </a>
+                    </div>
+                }
+                else
+                {
+
+                <form asp-action="Create" method="post" id="scamReportForm">
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-                    <div class="mb-3">
-                        <label asp-for="UrlOrIp" class="form-label fw-bold"></label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="bi bi-link-45deg"></i></span>
-                            <input asp-for="UrlOrIp" class="form-control" placeholder="Nhập URL hoặc địa chỉ IP (VD: luyenthi.com, 192.168.1.1)" />
+                    <div class="mb-4 text-center">
+                        <div class="btn-group" role="group" aria-label="Loại báo cáo">
+                            <input type="radio" class="btn-check" name="ReportType" id="typeUrl" value="Url" checked autocomplete="off">
+                            <label class="btn btn-outline-danger" for="typeUrl"><i class="bi bi-globe"></i> Trang web / IP</label>
+
+                            <input type="radio" class="btn-check" name="ReportType" id="typeBank" value="BankAccount" autocomplete="off">
+                            <label class="btn btn-outline-danger" for="typeBank"><i class="bi bi-bank"></i> Tài khoản Ngân hàng</label>
                         </div>
-                        <span asp-validation-for="UrlOrIp" class="text-danger small"></span>
+                    </div>
+
+                    <!-- URL / IP Section -->
+                    <div id="urlSection">
+                        <div class="mb-3">
+                            <label asp-for="UrlOrIp" class="form-label fw-bold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-link-45deg"></i></span>
+                                <input asp-for="UrlOrIp" class="form-control" placeholder="Nhập URL hoặc địa chỉ IP (VD: luyenthi.com, 192.168.1.1)" />
+                            </div>
+                            <span asp-validation-for="UrlOrIp" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Bank Account Section -->
+                    <div id="bankSection" style="display: none;">
+                        <div class="mb-3">
+                            <label asp-for="BankId" class="form-label fw-bold"></label>
+                            <select asp-for="BankId" class="form-select mb-2" id="bankSelect">
+                                <option value="">-- Chọn ngân hàng --</option>
+                                <option value="OTHER">Khác (Tự nhập)</option>
+                                <!-- Rendered via JS -->
+                            </select>
+                            <input type="text" name="customBankName" id="customBankInput" class="form-control d-none" placeholder="Nhập tên ngân hàng của bạn" />
+                            <span asp-validation-for="BankId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="BankAccountNumber" class="form-label fw-bold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-123"></i></span>
+                                <input asp-for="BankAccountNumber" class="form-control" id="accountNumber" placeholder="Nhập số tài khoản" />
+                                <button type="button" class="btn btn-secondary" id="btnLookup">Kiểm tra</button>
+                            </div>
+                            <span asp-validation-for="BankAccountNumber" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="BankAccountOwnerName" class="form-label fw-bold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                                <input asp-for="BankAccountOwnerName" class="form-control" id="accountOwnerName" placeholder="Tên chủ tài khoản (Sẽ tự động điền)" readonly />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AmountLost" class="form-label fw-bold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">VNĐ</span>
+                                <input asp-for="AmountLost" type="number" class="form-control" placeholder="Số tiền bạn bị lừa (tùy chọn)" />
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mb-4">
                         <label asp-for="Evidence" class="form-label fw-bold">Bằng chứng / Lý do</label>
-                        <textarea asp-for="Evidence" class="form-control" rows="5" placeholder="Mô tả chi tiết tại sao bạn cho rằng đây là lừa đảo, hoặc dán đường dẫn (link) hình ảnh bằng chứng vào đây..."></textarea>
+                        <textarea asp-for="Evidence" class="form-control" rows="5" placeholder="Mô tả chi tiết sự việc, dán đường dẫn (link) hình ảnh bằng chứng, ảnh chụp màn hình tin nhắn hoặc biên lai chuyển tiền vào đây..."></textarea>
                         <span asp-validation-for="Evidence" class="text-danger small"></span>
                         <div class="form-text">Vui lòng cung cấp thông tin càng chi tiết càng tốt để quản trị viên có thể xác minh nhanh chóng.</div>
                     </div>
@@ -43,6 +110,7 @@
                         </a>
                     </div>
                 </form>
+                }
             </div>
         </div>
     </div>
@@ -50,4 +118,105 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const typeUrl = document.getElementById('typeUrl');
+            const typeBank = document.getElementById('typeBank');
+            const urlSection = document.getElementById('urlSection');
+            const bankSection = document.getElementById('bankSection');
+            const bankSelect = document.getElementById('bankSelect');
+            const btnLookup = document.getElementById('btnLookup');
+            const accountNumber = document.getElementById('accountNumber');
+            const accountOwnerName = document.getElementById('accountOwnerName');
+
+            const customBankInput = document.getElementById('customBankInput');
+
+            // Toggle sections
+            function toggleSections() {
+                if (typeBank.checked) {
+                    urlSection.style.display = 'none';
+                    bankSection.style.display = 'block';
+                } else {
+                    urlSection.style.display = 'block';
+                    bankSection.style.display = 'none';
+                }
+            }
+
+            typeUrl.addEventListener('change', toggleSections);
+            typeBank.addEventListener('change', toggleSections);
+
+            // Fetch bank list
+            fetch('/api/v1/banks')
+                .then(res => res.json())
+                .then(data => {
+                    let banks = data && data.length > 0 ? data : [
+                        { bin: "970422", shortName: "MBBank", name: "Ngân hàng Quân đội" },
+                        { bin: "970436", shortName: "Vietcombank", name: "Ngân hàng Ngoại thương Việt Nam" },
+                        { bin: "970415", shortName: "VietinBank", name: "Ngân hàng Công thương Việt Nam" },
+                        { bin: "970418", shortName: "BIDV", name: "Ngân hàng Đầu tư và Phát triển Việt Nam" },
+                        { bin: "970407", shortName: "Techcombank", name: "Ngân hàng Kỹ thương Việt Nam" },
+                        { bin: "970416", shortName: "ACB", name: "Ngân hàng Á Châu" }
+                    ];
+
+                    banks.forEach(bank => {
+                        let option = document.createElement('option');
+                        option.value = bank.bin; // Use Bin for VietQR lookup
+                        option.text = `[${bank.shortName}] ${bank.name}`;
+                        bankSelect.appendChild(option);
+                    });
+                })
+                .catch(err => console.error("Error fetching banks", err));
+
+            bankSelect.addEventListener('change', function() {
+                if (this.value === 'OTHER') {
+                    customBankInput.classList.remove('d-none');
+                    customBankInput.required = true;
+                    accountOwnerName.removeAttribute('readonly');
+                } else {
+                    customBankInput.classList.add('d-none');
+                    customBankInput.required = false;
+                    accountOwnerName.setAttribute('readonly', 'true');
+                }
+            });
+
+            // Lookup account name
+            btnLookup.addEventListener('click', function () {
+                const bankId = bankSelect.value;
+                const accNo = accountNumber.value.trim();
+
+                if (!bankId || !accNo) {
+                    alert('Vui lòng chọn Ngân hàng và nhập Số tài khoản trước khi kiểm tra!');
+                    return;
+                }
+                
+                if (bankId === 'OTHER') {
+                    alert('Không thể tự động tra cứu tên chủ tài khoản đối với ngân hàng "Khác". Vui lòng tự nhập.');
+                    return;
+                }
+
+                btnLookup.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang tải...';
+                btnLookup.disabled = true;
+                accountOwnerName.value = '';
+
+                fetch(`/api/v1/banks/lookup?bankId=${bankId}&accountNumber=${accNo}`)
+                    .then(res => {
+                        if (!res.ok) throw new Error('Not found');
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data && data.accountName) {
+                            accountOwnerName.value = data.accountName;
+                        }
+                    })
+                    .catch(err => {
+                        alert('Không tìm thấy thông tin tài khoản hoặc có lỗi xảy ra.');
+                    })
+                    .finally(() => {
+                        btnLookup.innerHTML = 'Kiểm tra';
+                        btnLookup.disabled = false;
+                    });
+            });
+        });
+    </script>
 }

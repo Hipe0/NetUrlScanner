@@ -36,6 +36,8 @@ namespace NetURLScanner.Models
 
         public bool IsActive { get; set; } = true;
 
+        public bool IsPremium { get; set; } = false;
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }
