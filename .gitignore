@@ -41,4 +41,5 @@ wwwroot/uploads/
 tessdata/*.traineddata
 
 # Development Settings
+# Secrets and developer settings
 appsettings.Development.json
