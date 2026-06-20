@@ -81,6 +81,7 @@ if (googleAuth.Enabled &&
 
 builder.Services.AddScoped<UrlScannerService>();
 builder.Services.AddScoped<AdminSeedService>();
+builder.Services.AddHttpClient<GeminiChatService>();
 builder.Services.AddScoped<CmsSeedService>();
 builder.Services.AddScoped<ContentCategorizationService>();
 builder.Services.AddScoped<GoogleSafeBrowsingService>();
