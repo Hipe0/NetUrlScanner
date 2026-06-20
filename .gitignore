@@ -1,4 +1,4 @@
-﻿# Build results
+# Build results
 bin/
 obj/
 
@@ -39,3 +39,6 @@ wwwroot/uploads/
 
 # Tesseract language data (download per README)
 tessdata/*.traineddata
+
+# Secrets and developer settings
+appsettings.Development.json
