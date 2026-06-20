@@ -57,7 +57,7 @@ Quy tắc trả lời của bạn:
                 }
             };
 
-            var requestUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_apiKey}";
+            var requestUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={_apiKey}";
 
             try
             {

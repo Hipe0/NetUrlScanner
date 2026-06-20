@@ -16,7 +16,8 @@
                     <tr>
                         <th class="py-3 px-4">Ngày báo cáo</th>
                         <th class="py-3">Người báo cáo</th>
-                        <th class="py-3">URL / IP</th>
+                        <th class="py-3">Mục tiêu báo cáo</th>
+                        <th class="py-3">Loại</th>
                         <th class="py-3">Trạng thái</th>
                         <th class="py-3 text-center" style="width: 150px;">Thao tác</th>
                     </tr>
@@ -25,7 +26,7 @@
                     @if (!Model.Any())
                     {
                         <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
+                            <td colspan="6" class="text-center py-5 text-muted">
                                 <i class="bi bi-inbox fs-2 d-block mb-2"></i>
                                 Chưa có báo cáo nào.
                             </td>
@@ -48,9 +49,32 @@
                                     }
                                 </td>
                                 <td>
-                                    <div class="text-truncate fw-medium" style="max-width: 250px;" title="@item.UrlOrIp">
-                                        @item.UrlOrIp
-                                    </div>
+                                    @if (item.ReportType == "BankAccount")
+                                    {
+                                        <div class="text-truncate fw-medium" style="max-width: 250px;" title="@item.BankId - @item.BankAccountNumber">
+                                            <i class="bi bi-bank me-1"></i> @item.BankId - @item.BankAccountNumber
+                                            @if (!string.IsNullOrEmpty(item.BankAccountOwnerName))
+                                            {
+                                                <br /><small class="text-muted">(@item.BankAccountOwnerName)</small>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-truncate fw-medium" style="max-width: 250px;" title="@item.UrlOrIp">
+                                            <i class="bi bi-link me-1"></i> @item.UrlOrIp
+                                        </div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.ReportType == "BankAccount")
+                                    {
+                                        <span class="badge bg-primary">Ngân hàng</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Website</span>
+                                    }
                                 </td>
                                 <td>
                                     @if (item.Status == "Pending")

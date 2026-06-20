@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NetURLScanner.Data;
 using NetURLScanner.Services;
+using System.Security.Claims;
 
 namespace NetURLScanner.Controllers;
 
@@ -30,8 +31,18 @@ public class OcrScanController : AppControllerBase
     }
 
     [HttpGet("")]
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
+        var userIdStr = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (int.TryParse(userIdStr, out int userId))
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user != null && !user.IsPremium && !User.IsInRole("Admin") && !User.IsInRole("Manager"))
+            {
+                TempData["Error"] = "Chức năng này chỉ dành cho tài khoản Premium. Vui lòng nâng cấp để sử dụng.";
+                return RedirectToAction("Index", "Premium");
+            }
+        }
         return View(new OcrScanPageModel());
     }
 
@@ -40,6 +51,17 @@ public class OcrScanController : AppControllerBase
     public async Task<IActionResult> Index(IFormFile? imageFile)
     {
         var model = new OcrScanPageModel();
+
+        var userIdStr = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (int.TryParse(userIdStr, out int userIdDb))
+        {
+            var user = await _context.Users.FindAsync(userIdDb);
+            if (user != null && !user.IsPremium && !User.IsInRole("Admin") && !User.IsInRole("Manager"))
+            {
+                TempData["Error"] = "Chức năng này chỉ dành cho tài khoản Premium. Vui lòng nâng cấp để sử dụng.";
+                return RedirectToAction("Index", "Premium");
+            }
+        }
 
         if (imageFile == null || imageFile.Length == 0)
         {

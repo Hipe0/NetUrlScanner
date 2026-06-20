@@ -55,6 +55,9 @@
                         <li class="nav-item">
                             <a class="nav-link text-body" asp-controller="UrlScanner" asp-action="Index">Quét URL</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-body" asp-controller="BankAccountChecker" asp-action="Index">Tra cứu Ngân hàng</a>
+                        </li>
 
                         @if (User?.Identity?.IsAuthenticated == true)
                         {
@@ -73,6 +76,7 @@
                                     <li><a class="dropdown-item" asp-controller="UrlScanner" asp-action="History"><i class="bi bi-clock-history me-2"></i>Lịch sử quét</a></li>
                                     <li><a class="dropdown-item" asp-controller="BulkScan" asp-action="Index"><i class="bi bi-list-check me-2"></i>Quét hàng loạt</a></li>
                                     <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item text-warning fw-bold" asp-controller="Premium" asp-action="Index"><i class="bi bi-star-fill me-2"></i>Gói Premium</a></li>
                                     <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index"><i class="bi bi-person me-2"></i>Hồ sơ</a></li>
                                 </ul>
                             </li>

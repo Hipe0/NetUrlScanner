@@ -57,6 +57,7 @@ public class AdminSeedService
             Email = email,
             Role = "Admin",
             IsActive = true,
+            IsPremium = true,
             CreatedAt = DateTime.Now
         };
         adminUser.PasswordHash = hasher.HashPassword(adminUser, _options.Password);

@@ -17,7 +17,6 @@ namespace NetURLScanner.Controllers
         }
 
         // GET: /ScamReport/Create
-        // Cho phép tất cả người dùng (kể cả chưa đăng nhập) truy cập
         [AllowAnonymous]
         public IActionResult Create()
         {
@@ -26,10 +25,30 @@ namespace NetURLScanner.Controllers
 
         // POST: /ScamReport/Create
         [HttpPost]
-        [AllowAnonymous]
+        [Authorize]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ScamReport report)
+        public async Task<IActionResult> Create(ScamReport report, string? customBankName)
         {
+            if (report.ReportType == "BankAccount")
+            {
+                if (report.BankId == "OTHER" && !string.IsNullOrWhiteSpace(customBankName))
+                {
+                    report.BankId = customBankName.Trim();
+                }
+
+                if (string.IsNullOrWhiteSpace(report.BankId) || string.IsNullOrWhiteSpace(report.BankAccountNumber))
+                {
+                    ModelState.AddModelError("", "Vui lòng chọn Ngân hàng và nhập Số tài khoản.");
+                }
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(report.UrlOrIp))
+                {
+                    ModelState.AddModelError("UrlOrIp", "Vui lòng nhập URL hoặc IP.");
+                }
+            }
+
             if (ModelState.IsValid)
             {
                 if (User.Identity?.IsAuthenticated == true)
@@ -109,23 +128,26 @@ namespace NetURLScanner.Controllers
             // Chuyển trạng thái
             report.Status = "Approved";
 
-            // Thêm vào BlacklistedDomains
-            var domain = ExtractDomain(report.UrlOrIp);
-            
-            // Kiểm tra xem đã có trong blacklist chưa
-            bool exists = await _context.BlacklistedDomains.AnyAsync(b => b.Domain == domain);
-            if (!exists)
+            // Thêm vào BlacklistedDomains nếu là URL
+            if (report.ReportType == "Url" && !string.IsNullOrWhiteSpace(report.UrlOrIp))
             {
-                var blacklistDomain = new BlacklistedDomain
+                var domain = ExtractDomain(report.UrlOrIp);
+                
+                // Kiểm tra xem đã có trong blacklist chưa
+                bool exists = await _context.BlacklistedDomains.AnyAsync(b => b.Domain == domain);
+                if (!exists)
                 {
-                    Domain = domain,
-                    Category = "Lừa đảo do người dùng báo cáo",
-                    Reason = report.Evidence.Length > 450 ? report.Evidence.Substring(0, 450) + "..." : report.Evidence,
-                    Severity = "High",
-                    IsActive = true,
-                    CreatedAt = DateTime.Now
-                };
-                _context.BlacklistedDomains.Add(blacklistDomain);
+                    var blacklistDomain = new BlacklistedDomain
+                    {
+                        Domain = domain,
+                        Category = "Lừa đảo do người dùng báo cáo",
+                        Reason = report.Evidence.Length > 450 ? report.Evidence.Substring(0, 450) + "..." : report.Evidence,
+                        Severity = "High",
+                        IsActive = true,
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.BlacklistedDomains.Add(blacklistDomain);
+                }
             }
 
             await _context.SaveChangesAsync();

@@ -1,0 +1,153 @@
+@model List<NetURLScanner.Models.ScamReport>
+
+@{
+    ViewData["Title"] = "Kiểm tra Tài khoản Ngân hàng";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-danger text-white text-center py-3">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-bank me-2"></i>Tra cứu Blacklist Ngân hàng</h4>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted text-center mb-4">
+                    Nhập số tài khoản ngân hàng để kiểm tra xem số tài khoản này có từng bị báo cáo lừa đảo trên hệ thống của chúng tôi hay không.
+                </p>
+
+                @if (User?.Identity?.IsAuthenticated != true)
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-lock-fill text-muted mb-3 d-block" style="font-size: 3rem;"></i>
+                        <h5 class="fw-bold mb-3">Yêu cầu đăng nhập</h5>
+                        <p class="text-muted mb-4">Bạn cần đăng nhập vào hệ thống để có thể tra cứu danh sách đen ngân hàng lừa đảo.</p>
+                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="/BankAccountChecker" class="btn btn-primary btn-lg fw-bold px-4">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Đi đến trang đăng nhập
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <form asp-action="Index" method="post" id="checkForm">
+                        @if (ViewBag.Error != null)
+                        {
+                            <div class="alert alert-danger">@ViewBag.Error</div>
+                        }
+
+                        <div class="row">
+                            <div class="col-md-5 mb-3">
+                                <label class="form-label fw-bold">Ngân hàng</label>
+                                <select name="bankId" class="form-select mb-2" id="bankSelect" required>
+                                    <option value="">-- Chọn ngân hàng --</option>
+                                    <option value="OTHER">Khác (Tự nhập)</option>
+                                    <!-- Rendered via JS -->
+                                </select>
+                                <input type="text" name="customBankName" id="customBankInput" class="form-control d-none" placeholder="Nhập tên ngân hàng của bạn" />
+                            </div>
+                            <div class="col-md-7 mb-3">
+                                <label class="form-label fw-bold">Số tài khoản</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-123"></i></span>
+                                    <input type="text" name="bankAccountNumber" value="@ViewBag.BankAccountNumber" class="form-control" placeholder="Nhập số tài khoản" required />
+                                    <button type="submit" class="btn btn-danger fw-bold">Kiểm tra</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+
+        @if (ViewBag.HasSearched == true)
+        {
+            if (Model != null && Model.Any())
+            {
+                <div class="alert alert-danger shadow-sm mb-4">
+                    <h4 class="alert-heading fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>CẢNH BÁO NGUY HIỂM!</h4>
+                    <p>Số tài khoản <strong>@ViewBag.BankAccountNumber</strong> thuộc ngân hàng này đã bị báo cáo lừa đảo <strong>@Model.Count</strong> lần.</p>
+                    <hr>
+                    <p class="mb-0">Vui lòng <strong>TUYỆT ĐỐI KHÔNG</strong> thực hiện giao dịch chuyển tiền vào số tài khoản này.</p>
+                </div>
+
+                <h5 class="fw-bold mb-3 mt-4">Danh sách các báo cáo:</h5>
+                <div class="list-group shadow-sm">
+                    @foreach(var report in Model)
+                    {
+                        <div class="list-group-item list-group-item-action flex-column align-items-start">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 fw-bold text-danger">Người nhận: @(string.IsNullOrEmpty(report.BankAccountOwnerName) ? "Không rõ" : report.BankAccountOwnerName)</h6>
+                                <small class="text-muted">@report.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                            </div>
+                            <p class="mb-1 mt-2"><strong>Nội dung:</strong> @report.Evidence</p>
+                            @if(report.AmountLost > 0)
+                            {
+                                <small class="text-danger fw-bold">Số tiền bị lừa: @String.Format("{0:N0}", report.AmountLost) VNĐ</small>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-success shadow-sm">
+                    <h4 class="alert-heading fw-bold"><i class="bi bi-check-circle-fill me-2"></i>An toàn</h4>
+                    <p class="mb-0">Hiện tại chưa ghi nhận báo cáo lừa đảo nào liên quan đến số tài khoản <strong>@ViewBag.BankAccountNumber</strong> trên hệ thống của chúng tôi.</p>
+                    <hr>
+                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Lưu ý: Kết quả này chỉ dựa trên dữ liệu cộng đồng báo cáo trên NetURLScanner. Bạn vẫn nên cẩn trọng khi giao dịch với người lạ.</small>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const bankSelect = document.getElementById('bankSelect');
+            const selectedBankId = '@Html.Raw(ViewBag.BankId ?? "")';
+
+            // Fetch bank list
+            fetch('/api/v1/banks')
+                .then(res => res.json())
+                .then(data => {
+                    let banks = data && data.length > 0 ? data : [
+                        { bin: "970422", shortName: "MBBank", name: "Ngân hàng Quân đội" },
+                        { bin: "970436", shortName: "Vietcombank", name: "Ngân hàng Ngoại thương Việt Nam" },
+                        { bin: "970415", shortName: "VietinBank", name: "Ngân hàng Công thương Việt Nam" },
+                        { bin: "970418", shortName: "BIDV", name: "Ngân hàng Đầu tư và Phát triển Việt Nam" },
+                        { bin: "970407", shortName: "Techcombank", name: "Ngân hàng Kỹ thương Việt Nam" },
+                        { bin: "970416", shortName: "ACB", name: "Ngân hàng Á Châu" }
+                    ];
+                    
+                    banks.forEach(bank => {
+                        let option = document.createElement('option');
+                        option.value = bank.bin;
+                        option.text = `[${bank.shortName}] ${bank.name}`;
+                        if (bank.bin === selectedBankId) {
+                            option.selected = true;
+                        }
+                        bankSelect.appendChild(option);
+                    });
+
+                    // Check if selectedBankId is not in the list but not empty, it might be OTHER
+                    if (selectedBankId && selectedBankId !== "OTHER" && !banks.find(b => b.bin === selectedBankId)) {
+                        bankSelect.value = "OTHER";
+                        customBankInput.value = selectedBankId;
+                        customBankInput.classList.remove('d-none');
+                        customBankInput.required = true;
+                    }
+                })
+                .catch(err => console.error("Error fetching banks", err));
+
+            bankSelect.addEventListener('change', function() {
+                if (this.value === 'OTHER') {
+                    customBankInput.classList.remove('d-none');
+                    customBankInput.required = true;
+                } else {
+                    customBankInput.classList.add('d-none');
+                    customBankInput.required = false;
+                }
+            });
+        });
+    </script>
+}

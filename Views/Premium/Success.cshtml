@@ -1,0 +1,26 @@
+@{
+    ViewData["Title"] = "Thanh toán thành công";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 text-center">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-5">
+                <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                <h2 class="mt-4 fw-bold">Thanh toán thành công!</h2>
+                <p class="text-muted mt-3 mb-4">
+                    Cảm ơn bạn đã nâng cấp! Tài khoản của bạn đã trở thành tài khoản Premium. Bây giờ bạn có thể trải nghiệm toàn bộ các tính năng nâng cao của ứng dụng.
+                </p>
+
+                <div class="d-grid gap-2">
+                    <a asp-controller="OcrScan" asp-action="Index" class="btn btn-warning btn-lg fw-bold">
+                        <i class="bi bi-camera me-2"></i> Trải nghiệm Quét Ảnh Ngay
+                    </a>
+                    <a asp-controller="BankAccountChecker" asp-action="Index" class="btn btn-outline-danger btn-lg fw-bold">
+                        <i class="bi bi-bank me-2"></i> Tra cứu Blacklist Ngân hàng
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

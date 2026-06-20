@@ -73,6 +73,12 @@
                                 {
                                     <span class="badge bg-secondary">User</span>
                                 }
+                                @if (item.IsPremium)
+                                {
+                                    <div class="mt-1">
+                                        <span class="badge bg-info text-dark border border-info"><i class="bi bi-star-fill text-warning me-1"></i>Premium</span>
+                                    </div>
+                                }
                             </td>
                             <td>
                                 @if (item.IsActive)

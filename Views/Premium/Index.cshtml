@@ -1,0 +1,71 @@
+@{
+    ViewData["Title"] = "Nâng cấp Premium";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 text-center">
+        <h2 class="fw-bold mb-4">Gói Premium (Dành cho thành viên)</h2>
+        <p class="text-muted mb-5">Nâng cấp để sử dụng các tính năng cao cấp và quét không giới hạn.</p>
+
+        @if (ViewBag.IsAlreadyPremium == true)
+        {
+            <div class="alert alert-success">
+                <i class="bi bi-star-fill text-warning me-2"></i> Bạn đang là thành viên Premium. Chúc bạn trải nghiệm ứng dụng vui vẻ!
+            </div>
+            <a asp-controller="Home" asp-action="Landing" class="btn btn-outline-primary mt-3">Về trang chủ</a>
+        }
+        else
+        {
+            <div class="card shadow-lg border-warning mx-auto" style="max-width: 400px;">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-star-fill me-2"></i>NetURLScanner Pro</h4>
+                </div>
+                <div class="card-body p-4">
+                    <h2 class="card-title fw-bold">0đ <small class="text-muted fs-6">/ trọn đời (Thử nghiệm)</small></h2>
+                    <ul class="list-unstyled text-start mt-4 mb-4">
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Không giới hạn lượt quét URL</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> <strong>Sử dụng tính năng OCR</strong> quét ảnh chụp màn hình</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> <strong>Kiểm tra tài khoản Ngân hàng</strong> lừa đảo</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Không quảng cáo</li>
+                    </ul>
+
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <div class="alert alert-info text-start p-3 mb-4">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-bank me-2"></i>Thông tin chuyển khoản</h6>
+                            <p class="mb-1">Ngân hàng: <strong>MB Bank</strong></p>
+                            <p class="mb-1">Tên chủ sở hữu: <strong>Ho Dac Hiep</strong></p>
+                            <p class="mb-1">Số tài khoản: <strong class="text-danger fs-5">0348059277</strong></p>
+                            <p class="mb-1">Số tiền: <strong>0đ</strong></p>
+                            <p class="mb-0">Nội dung: <strong>NUS @User.Identity.Name</strong></p>
+                            <div class="text-center mt-3">
+                                <img src="https://img.vietqr.io/image/MB-0348059277-compact2.png?amount=0&addInfo=NUS%20@User.Identity.Name&accountName=HO%20DAC%20HIEP" alt="QR Code" class="img-fluid rounded shadow-sm" style="max-width: 200px;" />
+                            </div>
+                        </div>
+
+                        <form asp-action="CheckoutMock" method="post">
+                            <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold shadow-sm" id="btnPay">
+                                <i class="bi bi-check-circle me-2"></i> Tôi đã chuyển khoản xong
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="/Premium" class="btn btn-outline-dark btn-lg w-100 fw-bold">
+                            Đăng nhập để Nâng cấp
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('btnPay')?.addEventListener('click', function() {
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
+            this.classList.add('disabled');
+        });
+    </script>
+}
