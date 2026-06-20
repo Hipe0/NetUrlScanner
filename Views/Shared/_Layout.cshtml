@@ -132,7 +132,7 @@
                                 Trợ giúp
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-controller="Home" asp-action="Privacy"><i class="bi bi-info-circle me-2"></i>Giới thiệu</a></li>
+                                <li><a class="dropdown-item" asp-controller="Home" asp-action="Intro"><i class="bi bi-info-circle me-2"></i>Giới thiệu</a></li>
                                 <li><a class="dropdown-item" asp-controller="Home" asp-action="Faq"><i class="bi bi-question-circle me-2"></i>FAQ</a></li>
                                 <li><a class="dropdown-item" asp-controller="Feedback" asp-action="Create"><i class="bi bi-chat-left-text me-2"></i>Góp ý</a></li>
                                 @if (User?.Identity?.IsAuthenticated == true && !User.IsInRole("Admin") && !User.IsInRole("Manager"))

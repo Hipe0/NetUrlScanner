@@ -17,10 +17,50 @@
         else
         {
             <p class="text-muted">
-                NetURLScanner là hệ thống web hỗ trợ kiểm tra trạng thái hoạt động của URL và đánh giá mức độ rủi ro
-                dựa trên các đặc điểm kỹ thuật, cấu trúc đường dẫn, dấu hiệu giả mạo tên miền và các rule phân tích bảo mật.
+                NetURLScanner là hệ thống web hỗ trợ kiểm tra URL, phát hiện dấu hiệu giả mạo/lừa đảo,
+                phân loại nội dung trang web và cho phép cộng đồng báo cáo website hoặc tài khoản ngân hàng đáng ngờ.
             </p>
         }
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h4 class="fw-bold">Tính năng chính</h4>
+            <div class="row g-3 mt-2">
+                <div class="col-md-6">
+                    <h6 class="fw-semibold"><i class="bi bi-link-45deg text-primary me-1"></i>Quét URL</h6>
+                    <p class="text-muted small mb-0">Quét đơn lẻ tại <code>/Scan</code>, kết quả inline với gauge rủi ro, IP/vị trí, phân loại nội dung và Google Safe Browsing.</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-semibold"><i class="bi bi-list-check text-primary me-1"></i>Quét hàng loạt</h6>
+                    <p class="text-muted small mb-0">Dán danh sách hoặc import <strong>CSV, Excel, PDF</strong> (tối đa 30 URL/lần). Cần đăng nhập.</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-semibold"><i class="bi bi-qr-code-scan text-primary me-1"></i>Quét mã QR</h6>
+                    <p class="text-muted small mb-0">Dùng camera hoặc upload ảnh QR chứa URL, hệ thống tự chuyển sang quét.</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-semibold"><i class="bi bi-image text-warning me-1"></i>OCR (Premium)</h6>
+                    <p class="text-muted small mb-0">Tesseract đọc ảnh SMS/email, trích URL và quét tự động.</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-semibold"><i class="bi bi-bank text-danger me-1"></i>Tra cứu ngân hàng (Premium)</h6>
+                    <p class="text-muted small mb-0">Đối chiếu số tài khoản với blacklist từ báo cáo cộng đồng.</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-semibold"><i class="bi bi-shield-exclamation text-danger me-1"></i>Báo cáo lừa đảo</h6>
+                    <p class="text-muted small mb-0">Báo cáo URL/IP hoặc STK ngân hàng, kèm mô tả và upload ảnh bằng chứng.</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-semibold"><i class="bi bi-clock-history text-primary me-1"></i>Lịch sử & xuất báo cáo</h6>
+                    <p class="text-muted small mb-0">Lọc, biểu đồ Chart.js, modal chi tiết, xuất <strong>CSV / Excel / PDF</strong>.</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-semibold"><i class="bi bi-chat-dots text-primary me-1"></i>Chatbox AI</h6>
+                    <p class="text-muted small mb-0">Trợ lý Gemini trả lời câu hỏi về cách dùng hệ thống và an toàn trực tuyến.</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="card shadow-sm border-0 mb-4">
@@ -28,15 +68,13 @@
             <h4 class="fw-bold">1. Mục tiêu của hệ thống</h4>
 
             <p>
-                Hệ thống được xây dựng nhằm hỗ trợ quản trị viên kiểm tra nhanh một URL bất kỳ để xác định URL đó
-                còn hoạt động hay không, phản hồi nhanh hay chậm, có sử dụng HTTPS hay không và có dấu hiệu đáng ngờ
-                liên quan đến giả mạo, lừa đảo hoặc cấu trúc bất thường hay không.
+                Hệ thống hỗ trợ người dùng và quản trị viên kiểm tra nhanh một URL để xác định URL còn hoạt động hay không,
+                phản hồi nhanh hay chậm, có HTTPS hay không, có dấu hiệu giả mạo/lừa đảo hay không — trước khi truy cập hoặc chia sẻ link.
             </p>
 
             <p>
-                Sau mỗi lần quét, hệ thống sẽ lưu lại kết quả vào cơ sở dữ liệu SQL Server, bao gồm thông tin URL,
-                trạng thái hoạt động, mã phản hồi HTTP, thời gian phản hồi, điểm rủi ro, mức độ rủi ro và lý do đánh giá.
-                Nhờ đó, quản trị viên có thể theo dõi lịch sử kiểm tra và phân tích lại các URL đã quét.
+                Sau mỗi lần quét (khi đã đăng nhập), kết quả được lưu vào SQL Server: URL, trạng thái HTTP, thời gian phản hồi,
+                điểm rủi ro, phân loại nội dung, IP/vị trí, Google Safe Browsing và lý do đánh giá — phục vụ lịch sử, thống kê và xuất báo cáo.
             </p>
         </div>
     </div>
@@ -80,14 +118,28 @@
 
                 <li>
                     <strong>Phân tích rủi ro:</strong>
-                    hệ thống áp dụng các rule kiểm tra như HTTPS, từ khóa đáng ngờ, domain giả mạo thương hiệu,
-                    ký tự Unicode bất thường, punycode, TLD rủi ro, cấu trúc URL và nhóm nội dung rủi ro cao
-                    như cá cược/cờ bạc trực tuyến.
+                    áp dụng rule HTTPS, từ khóa đáng ngờ, giả mạo thương hiệu, lookalike domain, punycode,
+                    TLD rủi ro, Whitelist/Blacklist và nội dung cá cược/cờ bạc.
+                </li>
+
+                <li>
+                    <strong>Tra cứu IP & vị trí:</strong>
+                    dùng ip-api.com, hiển thị quốc gia/thành phố/ISP trên bản đồ Leaflet (nếu có tọa độ).
+                </li>
+
+                <li>
+                    <strong>Crawl HTML & phân loại nội dung:</strong>
+                    trích title, meta, Open Graph, schema.org — gợi ý loại trang (Tin tức, TMĐT, Game, Giáo dục...).
+                </li>
+
+                <li>
+                    <strong>Google Safe Browsing:</strong>
+                    kiểm tra chéo URL với cơ sở dữ liệu malware/phishing của Google (nếu bật API).
                 </li>
 
                 <li>
                     <strong>Lưu kết quả:</strong>
-                    toàn bộ kết quả quét được lưu vào SQL Server để phục vụ việc xem lại lịch sử và thống kê.
+                    ghi vào SQL Server khi người dùng đã đăng nhập; hiển thị báo cáo inline hoặc trong modal Lịch sử.
                 </li>
             </ol>
         </div>
@@ -289,7 +341,7 @@
                 <div class="col-md-4">
                     <div class="border rounded p-3 h-100">
                         <h5><span class="badge bg-success">Safe</span></h5>
-                        <p class="mb-1"><strong>0 - 30 điểm</strong></p>
+                        <p class="mb-1"><strong>0 - 25 điểm</strong></p>
                         <p class="text-muted mb-0">
                             URL có ít hoặc không có dấu hiệu bất thường. Đây là nhóm URL có mức rủi ro thấp.
                         </p>
@@ -299,7 +351,7 @@
                 <div class="col-md-4">
                     <div class="border rounded p-3 h-100">
                         <h5><span class="badge bg-warning text-dark">Warning</span></h5>
-                        <p class="mb-1"><strong>31 - 60 điểm</strong></p>
+                        <p class="mb-1"><strong>26 - 55 điểm</strong></p>
                         <p class="text-muted mb-0">
                             URL có một số dấu hiệu cần chú ý như redirect, response chậm, từ khóa nhạy cảm hoặc domain
                             có cấu trúc không bình thường.
@@ -310,7 +362,7 @@
                 <div class="col-md-4">
                     <div class="border rounded p-3 h-100">
                         <h5><span class="badge bg-danger">Suspicious</span></h5>
-                        <p class="mb-1"><strong>61 - 100 điểm</strong></p>
+                        <p class="mb-1"><strong>56 - 100 điểm</strong></p>
                         <p class="text-muted mb-0">
                             URL có nhiều dấu hiệu rủi ro như giả mạo thương hiệu, dùng ký tự thay thế, chứa từ khóa lừa đảo,
                             TLD rủi ro hoặc không phản hồi ổn định.
@@ -509,7 +561,7 @@
 
                 <div class="col-md-3">
                     <div class="border rounded p-3 h-100">
-                        <h6 class="fw-bold">Visual Studio 2026</h6>
+                        <h6 class="fw-bold">Visual Studio 2022</h6>
                         <p class="text-muted mb-0">
                             Môi trường phát triển chính dùng để viết code, quản lý project, debug và chạy ứng dụng.
                         </p>
@@ -536,9 +588,36 @@
 
                 <div class="col-md-3">
                     <div class="border rounded p-3 h-100">
-                        <h6 class="fw-bold">HTML, CSS, Razor View</h6>
+                        <h6 class="fw-bold">Tesseract OCR</h6>
                         <p class="text-muted mb-0">
-                            Dùng để xây dựng giao diện hiển thị, form nhập URL, bảng lịch sử và trang báo cáo chi tiết.
+                            Đọc chữ từ ảnh SMS/email, trích URL để quét tự động (tính năng Premium).
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold">Google Gemini</h6>
+                        <p class="text-muted mb-0">
+                            Chatbox AI hỗ trợ người dùng tra cứu hướng dẫn và câu hỏi về an toàn URL.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold">Leaflet.js & Chart.js</h6>
+                        <p class="text-muted mb-0">
+                            Bản đồ vị trí máy chủ và biểu đồ thống kê rủi ro trên Dashboard/Lịch sử.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold">iText7 & ClosedXML</h6>
+                        <p class="text-muted mb-0">
+                            Xuất báo cáo PDF và Excel từ lịch sử quét URL.
                         </p>
                     </div>
                 </div>

@@ -32,7 +32,7 @@ namespace NetUrlScanner.Controllers
         }
 
         [HttpGet("Introduction")]
-        public async Task<IActionResult> Privacy()
+        public async Task<IActionResult> Intro()
         {
             var content = await _context.SiteContents.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.ContentKey == "introduction");
