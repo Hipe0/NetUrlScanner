@@ -27,6 +27,7 @@ namespace NetURLScanner.Models
         public string? BankAccountOwnerName { get; set; }
 
         [Display(Name = "Số tiền bị lừa (VNĐ)")]
+        [Precision(18, 2)]
         public decimal? AmountLost { get; set; }
 
         [Required(ErrorMessage = "Vui lòng cung cấp lý do hoặc bằng chứng.")]
