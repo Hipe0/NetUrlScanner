@@ -23,20 +23,30 @@ Ngoài quét URL cơ bản, hệ thống hỗ trợ quét hàng loạt (CSV/Exce
 ### Lịch sử, báo cáo & cộng đồng
 - Lịch sử quét: filter, phân trang, biểu đồ **Chart.js**, modal chi tiết (dark mode).
 - Xuất **CSV / Excel / PDF**; xuất PDF từng bản ghi trong modal.
+- Gắn **nhãn & ghi chú** cá nhân cho từng lượt quét.
 - **Upvote/Downvote domain** — đánh giá độ tin cậy từng domain.
 - **Báo cáo lừa đảo** — URL/IP hoặc tài khoản ngân hàng, kèm upload ảnh bằng chứng.
 
+### Ngân hàng & chống lừa đảo tài chính
+- **Tra cứu ngân hàng** (Premium) tại `/BankAccountChecker` — đối chiếu STK với:
+  - Báo cáo lừa đảo đã duyệt (`ScamReports`, loại BankAccount)
+  - Bảng **Blacklist Ngân hàng** (`BlacklistedBankAccounts`)
+- Tra tên chủ TK qua **VietQR API** (nếu ngân hàng hỗ trợ).
+- **Quản lý Blacklist Ngân hàng** (Manager/Admin) tại `/Manager/BlacklistBank` — thêm/sửa/xóa STK lừa đảo, bật/tắt.
+
 ### Premium
 - **OCR** (Tesseract) — đọc ảnh SMS/email, trích URL và quét tự động.
-- **Tra cứu ngân hàng** — đối chiếu STK với blacklist cộng đồng.
+- **Tra cứu ngân hàng** — đối chiếu STK với báo cáo cộng đồng đã duyệt và blacklist ngân hàng.
 - Trang nâng cấp `/Premium` với thanh toán demo (VietQR).
 
 ### Tài khoản & quản trị
 - Đăng ký / đăng nhập (email + **Google OAuth**), phân quyền Admin / Manager / User.
-- Dashboard, hồ sơ cá nhân, CMS (Giới thiệu, FAQ), form góp ý.
+- **Kiểm duyệt** (Manager/Admin): Whitelist URL (`/Manager/Whitelist`), Blacklist URL (`/Manager/Blacklist`), Blacklist Ngân hàng (`/Manager/BlacklistBank`), duyệt báo cáo lừa đảo.
+- Dashboard, hồ sơ cá nhân, quản lý người dùng (Admin), CMS (Giới thiệu, FAQ), form góp ý.
 - **Chatbox AI** (Google Gemini) hỗ trợ người dùng.
 - REST API + **Swagger** (chỉ Admin).
 - Giao diện **Light/Dark Mode**.
+- **Dữ liệu mẫu** (`SampleDataSeed`) — tự tạo user, URL scan, blacklist, scam report demo khi chạy app (bật/tắt trong appsettings).
 
 ## Cài đặt và chạy project
 
@@ -165,9 +175,26 @@ Cấu hình `appsettings.json`:
 
 Nếu thiếu API key, chatbox vẫn hiển thị nhưng không trả lời được.
 
+### Dữ liệu mẫu (SampleDataSeed)
+
+Hữu ích khi demo hoặc phát triển — tự tạo dữ liệu nếu DB còn trống:
+
+```json
+"SampleDataSeed": {
+  "Enabled": true
+}
+```
+
+Khi bật, lần chạy app đầu tiên sẽ seed (nếu chưa có):
+- 5 user thường (`user1@gmail.com` … `user5@gmail.com`, mật khẩu `123456`)
+- 5 user Premium (`premium1@gmail.com` …, mật khẩu `123456`)
+- Blacklist domain, Whitelist brand, **Blacklist tài khoản ngân hàng**, báo cáo lừa đảo, lịch sử quét URL mẫu
+
+Đặt `Enabled: false` khi dùng dữ liệu thật hoặc deploy production.
+
 ## Phân quyền người dùng
 
-| Role | Quét URL | Hàng loạt / QR | Lịch sử & xuất | OCR / Tra NH | Whitelist / Blacklist | Swagger |
+| Role | Quét URL | Hàng loạt / QR | Lịch sử & xuất | OCR / Tra NH | Whitelist / Blacklist URL / NH | Swagger |
 |---|---|---|---|---|---|---|
 | Guest | Có | Không | Không | Không | Không | Không |
 | User | Có | Có | Có | Premium | Không | Không |
@@ -192,6 +219,8 @@ Hệ thống có hai nhóm endpoint (dùng chung cookie đăng nhập với MVC)
 | GET | `/api/v1/scans/{id}` | User+ | Chi tiết |
 | DELETE | `/api/v1/scans/{id}` | User+ | Xóa |
 | GET | `/api/v1/health` | Công khai | Health check |
+| GET | `/api/v1/banks` | Công khai | Danh sách ngân hàng VietQR |
+| GET | `/api/v1/banks/lookup` | Công khai | Tra tên chủ tài khoản |
 
 ### API flat (JSON trực tiếp)
 
@@ -295,6 +324,7 @@ NetUrlScanner/
 │   ├── BankAccountCheckerController.cs
 │   ├── PremiumController.cs
 │   ├── ScamReportController.cs
+│   ├── BlacklistedBankAccountsController.cs  # /Manager/BlacklistBank
 │   ├── DomainVoteController.cs
 │   ├── DashboardController.cs
 │   ├── CmsController.cs
@@ -306,6 +336,7 @@ NetUrlScanner/
 │   ├── OcrService.cs
 │   ├── GeminiChatService.cs
 │   ├── UrlListFileParser.cs         # Parse CSV/Excel/PDF
+│   ├── SampleDataSeedService.cs     # Dữ liệu mẫu demo
 │   └── ...
 ├── Views/
 │   ├── UrlScanner/
@@ -345,7 +376,11 @@ NetUrlScanner/
 
 ### Báo cáo lừa đảo
 - Form báo cáo URL/IP hoặc tài khoản ngân hàng, upload tối đa 5 ảnh bằng chứng.
-- Admin/Manager duyệt → URL approved có thể tự động thêm Blacklist.
+- Admin/Manager duyệt → URL approved tự động thêm Blacklist domain.
+
+### Blacklist Ngân hàng
+- Manager/Admin quản lý STK lừa đảo tại `/Manager/BlacklistBank`.
+- Tra cứu Premium đối chiếu cả báo cáo đã duyệt và bảng blacklist này.
 
 ## Thành viên thực hiện
 

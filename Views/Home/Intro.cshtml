@@ -45,7 +45,11 @@
                 </div>
                 <div class="col-md-6">
                     <h6 class="fw-semibold"><i class="bi bi-bank text-danger me-1"></i>Tra cứu ngân hàng (Premium)</h6>
-                    <p class="text-muted small mb-0">Đối chiếu số tài khoản với blacklist từ báo cáo cộng đồng.</p>
+                    <p class="text-muted small mb-0">Đối chiếu STK với báo cáo lừa đảo đã duyệt và bảng <strong>Blacklist Ngân hàng</strong>. Tra tên chủ TK qua VietQR.</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-semibold"><i class="bi bi-shield-x text-danger me-1"></i>Kiểm duyệt (Manager/Admin)</h6>
+                    <p class="text-muted small mb-0">Whitelist URL, Blacklist URL, <strong>Blacklist Ngân hàng</strong> (<code>/Manager/BlacklistBank</code>), duyệt báo cáo lừa đảo.</p>
                 </div>
                 <div class="col-md-6">
                     <h6 class="fw-semibold"><i class="bi bi-shield-exclamation text-danger me-1"></i>Báo cáo lừa đảo</h6>
@@ -60,6 +64,20 @@
                     <p class="text-muted small mb-0">Trợ lý Gemini trả lời câu hỏi về cách dùng hệ thống và an toàn trực tuyến.</p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h4 class="fw-bold">Dữ liệu mẫu (demo)</h4>
+            <p>
+                Khi <code>SampleDataSeed:Enabled</code> là <code>true</code> trong <code>appsettings.json</code>,
+                hệ thống tự tạo dữ liệu demo lần đầu chạy (nếu DB còn trống): user mẫu, lịch sử quét, blacklist domain/ngân hàng, báo cáo lừa đảo.
+            </p>
+            <p class="text-muted small mb-0">
+                Tài khoản demo: <code>user1@gmail.com</code> / <code>premium1@gmail.com</code> … mật khẩu <code>123456</code>.
+                Tắt <code>SampleDataSeed</code> khi dùng dữ liệu thật.
+            </p>
         </div>
     </div>
 
@@ -139,9 +157,23 @@
 
                 <li>
                     <strong>Lưu kết quả:</strong>
-                    ghi vào SQL Server khi người dùng đã đăng nhập; hiển thị báo cáo inline hoặc trong modal Lịch sử.
+                    ghi vào SQL Server khi đã đăng nhập; hiển thị báo cáo inline, modal hoặc trang <code>/Scan/Details/{id}</code>.
                 </li>
             </ol>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h4 class="fw-bold">2b. Tra cứu & quản lý tài khoản ngân hàng</h4>
+            <p>Chức năng Premium tại <code>/BankAccountChecker</code>:</p>
+            <ol>
+                <li>Người dùng chọn ngân hàng và nhập số tài khoản.</li>
+                <li>Hệ thống tra tên chủ TK qua API VietQR (nếu hỗ trợ).</li>
+                <li>Đối chiếu với <strong>báo cáo lừa đảo đã duyệt</strong> (cộng đồng gửi, Admin duyệt).</li>
+                <li>Đối chiếu với bảng <strong>Blacklist Ngân hàng</strong> do Manager/Admin quản lý tại <code>/Manager/BlacklistBank</code>.</li>
+            </ol>
+            <p class="text-muted small mb-0">Manager/Admin có thể thêm STK lừa đảo trực tiếp vào blacklist mà không cần chờ báo cáo cộng đồng.</p>
         </div>
     </div>
 
