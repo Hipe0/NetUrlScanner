@@ -88,6 +88,7 @@ builder.Services.AddHttpClient<GeminiChatService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(20);
 });
+builder.Services.AddScoped<SampleDataSeedService>();
 builder.Services.AddScoped<CmsSeedService>();
 builder.Services.AddScoped<ContentCategorizationService>();
 builder.Services.AddScoped<GoogleSafeBrowsingService>();
@@ -165,6 +166,9 @@ _ = Task.Run(async () =>
 
         var cmsSeed = scope.ServiceProvider.GetRequiredService<CmsSeedService>();
         await cmsSeed.SeedAsync();
+
+        var sampleDataSeed = scope.ServiceProvider.GetRequiredService<SampleDataSeedService>();
+        await sampleDataSeed.SeedAsync();
 
         using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
         _ = await client.GetAsync("http://ip-api.com/json/8.8.8.8");

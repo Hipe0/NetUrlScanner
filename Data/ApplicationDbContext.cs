@@ -13,6 +13,7 @@ namespace NetURLScanner.Data
         public DbSet<UrlScan> UrlScans { get; set; }
         public DbSet<TrustedBrand> TrustedBrands { get; set; }
         public DbSet<BlacklistedDomain> BlacklistedDomains { get; set; }
+        public DbSet<BlacklistedBankAccount> BlacklistedBankAccounts { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<ScamReport> ScamReports { get; set; }
         public DbSet<FaqItem> FaqItems { get; set; }

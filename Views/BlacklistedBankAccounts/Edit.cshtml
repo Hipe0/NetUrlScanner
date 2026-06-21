@@ -1,0 +1,66 @@
+@model NetURLScanner.Models.BlacklistedBankAccount
+
+@{
+    ViewData["Title"] = "Chỉnh sửa số tài khoản Blacklist";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Chỉnh sửa thông tin STK lừa đảo</h4>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Edit">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="CreatedAt" />
+
+                    <div class="row g-3">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="BankId" class="form-label fw-bold">Ngân hàng <span class="text-danger">*</span></label>
+                            <input asp-for="BankId" class="form-control" required />
+                            <span asp-validation-for="BankId" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="BankAccountNumber" class="form-label fw-bold">Số tài khoản <span class="text-danger">*</span></label>
+                            <input asp-for="BankAccountNumber" class="form-control" required />
+                            <span asp-validation-for="BankAccountNumber" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="BankAccountOwnerName" class="form-label fw-bold">Tên chủ tài khoản</label>
+                        <input asp-for="BankAccountOwnerName" class="form-control" />
+                        <span asp-validation-for="BankAccountOwnerName" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Reason" class="form-label fw-bold">Lý do đưa vào Blacklist <span class="text-danger">*</span></label>
+                        <textarea asp-for="Reason" class="form-control" rows="3" required></textarea>
+                        <span asp-validation-for="Reason" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="mb-4 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" asp-for="IsActive" id="isActiveSwitch">
+                        <label class="form-check-label fw-bold" for="isActiveSwitch">Kích hoạt chặn STK này</label>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Quay lại
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i>Lưu thay đổi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
