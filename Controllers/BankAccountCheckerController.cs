@@ -73,7 +73,14 @@ namespace NetURLScanner.Controllers
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
 
+            var blacklistMatch = await _context.BlacklistedBankAccounts
+                .Where(b => b.BankId == bankId 
+                         && b.BankAccountNumber == bankAccountNumber 
+                         && b.IsActive)
+                .FirstOrDefaultAsync();
+
             ViewBag.HasSearched = true;
+            ViewBag.BlacklistMatch = blacklistMatch;
             return View(reports);
         }
     }

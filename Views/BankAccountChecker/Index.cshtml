@@ -60,16 +60,32 @@
 
         @if (ViewBag.HasSearched == true)
         {
-            if (Model != null && Model.Any())
+            var blacklistMatch = ViewBag.BlacklistMatch as NetURLScanner.Models.BlacklistedBankAccount;
+            
+            if (blacklistMatch != null)
             {
                 <div class="alert alert-danger shadow-sm mb-4">
-                    <h4 class="alert-heading fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>CẢNH BÁO NGUY HIỂM!</h4>
-                    <p>Số tài khoản <strong>@ViewBag.BankAccountNumber</strong> thuộc ngân hàng này đã bị báo cáo lừa đảo <strong>@Model.Count</strong> lần.</p>
+                    <h4 class="alert-heading fw-bold"><i class="bi bi-shield-x me-2"></i>NẰM TRONG DANH SÁCH ĐEN!</h4>
+                    <p>Số tài khoản <strong>@ViewBag.BankAccountNumber</strong> đã bị hệ thống đưa vào <strong>danh sách đen chính thức</strong>.</p>
+                    <p class="mb-1 mt-2"><strong>Lý do:</strong> @blacklistMatch.Reason</p>
                     <hr>
                     <p class="mb-0">Vui lòng <strong>TUYỆT ĐỐI KHÔNG</strong> thực hiện giao dịch chuyển tiền vào số tài khoản này.</p>
                 </div>
+            }
 
-                <h5 class="fw-bold mb-3 mt-4">Danh sách các báo cáo:</h5>
+            if (Model != null && Model.Any())
+            {
+                @if (blacklistMatch == null)
+                {
+                    <div class="alert alert-danger shadow-sm mb-4">
+                        <h4 class="alert-heading fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>CẢNH BÁO NGUY HIỂM!</h4>
+                        <p>Số tài khoản <strong>@ViewBag.BankAccountNumber</strong> thuộc ngân hàng này đã bị cộng đồng báo cáo lừa đảo <strong>@Model.Count</strong> lần.</p>
+                        <hr>
+                        <p class="mb-0">Vui lòng <strong>TUYỆT ĐỐI KHÔNG</strong> thực hiện giao dịch chuyển tiền vào số tài khoản này.</p>
+                    </div>
+                }
+
+                <h5 class="fw-bold mb-3 mt-4">Danh sách các báo cáo từ cộng đồng:</h5>
                 <div class="list-group shadow-sm">
                     @foreach(var report in Model)
                     {
@@ -87,13 +103,13 @@
                     }
                 </div>
             }
-            else
+            else if (blacklistMatch == null)
             {
                 <div class="alert alert-success shadow-sm">
                     <h4 class="alert-heading fw-bold"><i class="bi bi-check-circle-fill me-2"></i>An toàn</h4>
                     <p class="mb-0">Hiện tại chưa ghi nhận báo cáo lừa đảo nào liên quan đến số tài khoản <strong>@ViewBag.BankAccountNumber</strong> trên hệ thống của chúng tôi.</p>
                     <hr>
-                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Lưu ý: Kết quả này chỉ dựa trên dữ liệu cộng đồng báo cáo trên NetURLScanner. Bạn vẫn nên cẩn trọng khi giao dịch với người lạ.</small>
+                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Lưu ý: Kết quả này chỉ dựa trên dữ liệu hiện tại trên NetURLScanner. Bạn vẫn nên cẩn trọng khi giao dịch với người lạ.</small>
                 </div>
             }
         }
