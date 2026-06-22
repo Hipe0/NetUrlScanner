@@ -7,6 +7,8 @@ using NetURLScanner.Options;
 using NetURLScanner.Services;
 using System.Reflection;
 
+AppDomain.CurrentDomain.SetData("DataDirectory", System.IO.Directory.GetCurrentDirectory());
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<AdminSeedOptions>(
