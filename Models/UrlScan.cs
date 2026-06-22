@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace NetURLScanner.Models
 {
+    /// <summary>
+    /// Một bản ghi kết quả quét URL — map bảng UrlScans trong SQL Server.
+    /// </summary>
     public class UrlScan
     {
         public int Id { get; set; }
@@ -10,15 +13,19 @@ namespace NetURLScanner.Models
         [Url]
         public string Url { get; set; } = string.Empty;
 
+        /// <summary>Online, Redirect, Client Error, Server Error, Offline, Warning.</summary>
         public string Status { get; set; } = string.Empty;
         public int? StatusCode { get; set; }
         public long ResponseTimeMs { get; set; }
 
         public bool IsHttps { get; set; }
 
+        /// <summary>Điểm rủi ro 0–100 (rule-based).</summary>
         public int RiskScore { get; set; }
+        /// <summary>Safe, Warning hoặc Suspicious.</summary>
         public string RiskLevel { get; set; } = string.Empty;
 
+        /// <summary>Các lý do đánh giá, nối bằng dấu chấm phẩy.</summary>
         public string Reasons { get; set; } = string.Empty;
         public string? ErrorMessage { get; set; }
 

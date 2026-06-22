@@ -10,9 +10,15 @@ public class CategoryResult
     public List<string> Tags { get; set; } = new();
 }
 
+/// <summary>
+/// Phân loại nội dung trang web từ HTML đã crawl.
+/// Dùng từ khóa có trọng số, gợi ý URL, schema.org JSON-LD và xử lý xung đột danh mục.
+/// </summary>
 public class ContentCategorizationService
 {
+    // Điểm tối thiểu để chọn danh mục chính (tránh đoán bừa khi tín hiệu yếu).
     private const int MinPrimaryScore = 5;
+    // Khoảng cách tối thiểu giữa hạng 1 và hạng 2 — nếu quá sát → "Tổng quát".
     private const int MinMargin = 3;
 
     private static readonly Dictionary<string, string> DomainOverrides = new(StringComparer.OrdinalIgnoreCase)
@@ -127,25 +133,32 @@ public class ContentCategorizationService
         ["BankAccount"] = "Ngân hàng / Tài chính"
     };
 
+    /// <summary>
+    /// Điểm vào phân loại: parse HTML → trích ngữ cảnh → chấm điểm → chọn danh mục chính + tags phụ.
+    /// </summary>
+    /// <param name="html">Nội dung HTML trang (tối đa ~512KB từ UrlScannerService).</param>
+    /// <param name="pageUrl">URL gốc — dùng cho override domain và regex gợi ý.</param>
     public CategoryResult Categorize(string html, string? pageUrl = null)
     {
         var doc = new HtmlDocument();
         doc.LoadHtml(html);
 
+        // Loại bỏ script/style — tránh đếm từ khóa trong mã JavaScript/CSS.
         foreach (var node in doc.DocumentNode.SelectNodes("//script|//style|//noscript") ?? Enumerable.Empty<HtmlNode>())
             node.Remove();
 
         var ctx = ExtractContext(doc, pageUrl);
 
+        // Domain đã biết trước (udemy, shopee…) → trả luôn, không cần chấm điểm.
         if (!string.IsNullOrEmpty(ctx.Host) && TryDomainOverride(ctx.Host, out var overrideCategory))
             return BuildResult(overrideCategory, new Dictionary<string, int> { [overrideCategory] = 100 });
 
-        var scores = ScoreKeywords(ctx);
-        ApplyUrlHints(ctx.FullUrl, scores);
-        ApplySchemaSignals(ctx.SchemaTypes, scores);
-        ApplyOgTypeSignal(ctx.OgType, scores);
-        ApplyEduTldBoost(ctx.Host, scores);
-        ApplyConflictResolution(ctx, scores);
+        var scores = ScoreKeywords(ctx);       // Từ khóa × trọng số vùng trang
+        ApplyUrlHints(ctx.FullUrl, scores);    // Regex trên URL (/course/, fifa…)
+        ApplySchemaSignals(ctx.SchemaTypes, scores); // JSON-LD @type
+        ApplyOgTypeSignal(ctx.OgType, scores);     // og:type product/article
+        ApplyEduTldBoost(ctx.Host, scores);          // .edu, .edu.vn
+        ApplyConflictResolution(ctx, scores);        // Giảm nhầm Game↔TMĐT, Tin tức↔Giải trí
 
         return PickResult(scores);
     }

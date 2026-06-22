@@ -10,12 +10,16 @@ using NetURLScanner.Models;
 
 namespace NetURLScanner.Services
 {
+    /// <summary>
+    /// Service lõi: quét URL, phân tích HTTP, geolocation, chấm điểm rủi ro rule-based.
+    /// Được gọi từ UrlScannerController, BulkScan, API và OCR (sau khi trích URL).
+    /// </summary>
     public class UrlScannerService
     {
-        // Các port phổ biến thường dùng cho web. Nếu dùng port khác, hệ thống sẽ đánh giá có rủi ro về mặt cấu trúc.
+        // Port web phổ biến — port lạ được cộng điểm nhóm structure.
         private static readonly HashSet<int> CommonPorts = new() { 80, 443, 8080, 8443 };
 
-        // Danh sách từ khóa liên quan đến cá cược, cờ bạc.
+        // Từ khóa cá cược / cờ bạc — phát hiện → thường gán Suspicious.
         private static readonly string[] GamblingWords =
         {
             "bet", "betting", "casino", "gambling", "poker", "slot", "jackpot",

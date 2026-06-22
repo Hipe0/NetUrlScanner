@@ -7,6 +7,9 @@ using System.Security.Claims;
 
 namespace NetURLScanner.Controllers
 {
+    /// <summary>
+    /// Tra cứu số tài khoản ngân hàng (Premium) — đối chiếu ScamReports đã duyệt và BlacklistedBankAccounts.
+    /// </summary>
     [Authorize]
     public class BankAccountCheckerController : Controller
     {
@@ -17,6 +20,7 @@ namespace NetURLScanner.Controllers
             _context = context;
         }
 
+        /// <summary>Trang tra cứu — guest xem được form; user thường bị redirect sang Premium.</summary>
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> Index()
@@ -25,6 +29,7 @@ namespace NetURLScanner.Controllers
             if (int.TryParse(userIdStr, out int userId))
             {
                 var user = await _context.Users.FindAsync(userId);
+                // Premium, Admin hoặc Manager được dùng miễn phí chức năng này.
                 if (user != null && !user.IsPremium && !User.IsInRole("Admin") && !User.IsInRole("Manager"))
                 {
                     TempData["Error"] = "Chức năng này chỉ dành cho tài khoản Premium. Vui lòng nâng cấp để sử dụng.";
@@ -64,7 +69,7 @@ namespace NetURLScanner.Controllers
                 return View();
             }
 
-            // Perform check in ScamReports
+            // Nguồn 1: báo cáo lừa đảo STK đã được Manager/Admin duyệt (Approved).
             var reports = await _context.ScamReports
                 .AsNoTracking()
                 .Where(r => r.ReportType == "BankAccount"
@@ -74,6 +79,7 @@ namespace NetURLScanner.Controllers
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
 
+            // Nguồn 2: blacklist STK do Manager/Admin thêm trực tiếp (chỉ bản ghi IsActive).
             var blacklistMatch = await _context.BlacklistedBankAccounts
                 .Where(b => b.BankId == bankId 
                          && b.BankAccountNumber == bankAccountNumber 

@@ -1,5 +1,8 @@
 namespace NetURLScanner.Helpers;
 
+/// <summary>
+/// Tiện ích chuẩn hóa tên miền — dùng chung cho quét URL, vote domain, blacklist.
+/// </summary>
 public static class DomainHelper
 {
     private static readonly string[] VietnameseSecondLevelTlds =
@@ -8,6 +11,9 @@ public static class DomainHelper
         ".biz.vn", ".info.vn", ".name.vn", ".pro.vn", ".health.vn"
     };
 
+    /// <summary>
+    /// Nhận URL đầy đủ hoặc hostname → trả host đã chuẩn hóa (lowercase, bỏ www).
+    /// </summary>
     public static string? NormalizeDomain(string? urlOrHost)
     {
         if (string.IsNullOrWhiteSpace(urlOrHost)) return null;
@@ -28,6 +34,7 @@ public static class DomainHelper
         return NormalizeHost(uri.Host);
     }
 
+    /// <summary>Chuẩn hóa hostname: trim, lowercase, bỏ tiền tố www.</summary>
     public static string? NormalizeHost(string host)
     {
         host = host.Trim().ToLowerInvariant().TrimEnd('.');
@@ -37,6 +44,10 @@ public static class DomainHelper
         return string.IsNullOrWhiteSpace(host) ? null : host;
     }
 
+    /// <summary>
+    /// Trích "domain đăng ký" — vd. sub.shop.vietcombank.com.vn → vietcombank.com.vn.
+    /// Hỗ trợ TLD hai cấp của Việt Nam (.com.vn).
+    /// </summary>
     public static string GetRegistrableDomain(string host)
     {
         host = NormalizeHost(host) ?? host;

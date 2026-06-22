@@ -7,8 +7,10 @@ using NetURLScanner.Options;
 using NetURLScanner.Services;
 using System.Reflection;
 
+// Điểm vào ứng dụng ASP.NET Core — cấu hình DI, middleware, routing, seed dữ liệu khởi tạo.
 var builder = WebApplication.CreateBuilder(args);
 
+// Đọc cấu hình từ appsettings.json vào các lớp Options (Admin, OCR, Safe Browsing…).
 builder.Services.Configure<AdminSeedOptions>(
     builder.Configuration.GetSection(AdminSeedOptions.SectionName));
 builder.Services.Configure<GoogleSafeBrowsingOptions>(
@@ -21,6 +23,7 @@ builder.Services.AddHttpClient("SafeBrowsing", client =>
     client.Timeout = TimeSpan.FromSeconds(8);
 });
 
+// MVC (Razor Views) + API Controllers + Swagger/OpenAPI.
 builder.Services.AddControllersWithViews();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -45,6 +48,7 @@ builder.Services.AddSwaggerGen(options =>
     }
 });
 
+// EF Core — mỗi HTTP request nhận một DbContext (Scoped), tự dispose sau request.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -55,6 +59,7 @@ builder.Services.Configure<GoogleAuthOptions>(
 
 var googleAuth = builder.Configuration.GetSection(GoogleAuthOptions.SectionName).Get<GoogleAuthOptions>() ?? new GoogleAuthOptions();
 
+// Xác thực: Cookie là mặc định; Google OAuth chỉ đăng ký khi có ClientId/Secret trong config.
 var authBuilder = builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -62,8 +67,8 @@ var authBuilder = builder.Services.AddAuthentication(options =>
 })
 .AddCookie("Cookies", options =>
 {
-    options.LoginPath = "/Account/Login";
-    options.AccessDeniedPath = "/Account/AccessDenied";
+    options.LoginPath = "/Account/Login";           // Chưa login → chuyển về đây
+    options.AccessDeniedPath = "/Account/AccessDenied"; // Không đủ quyền role
 });
 
 if (googleAuth.Enabled &&
@@ -79,6 +84,7 @@ if (googleAuth.Enabled &&
     });
 }
 
+// Đăng ký các service nghiệp vụ — Scoped = một instance mỗi HTTP request.
 builder.Services.AddScoped<UrlScannerService>();
 builder.Services.AddScoped<AdminSeedService>();
 builder.Services.Configure<GeminiOptions>(
@@ -112,10 +118,11 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-app.UseAuthentication();
-app.UseAuthorization();
+// Thứ tự bắt buộc: Routing → Auth → Authorization → Map endpoints.
+app.UseAuthentication();  // Đọc cookie, gán User/Claims vào HttpContext
+app.UseAuthorization();   // Kiểm tra [Authorize], Roles
 
-// Chỉ cho phép tài khoản có quyền Admin truy cập Swagger UI và API Docs
+// Middleware tùy chỉnh: Swagger chỉ dành cho Admin đã đăng nhập.
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/swagger") || context.Request.Path.StartsWithSegments("/api/docs"))
@@ -151,6 +158,8 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Landing}/{id?}");
 
+// Seed chạy nền khi app khởi động — không chặn việc lắng nghe HTTP.
+// Tạo admin, CMS mẫu, dữ liệu demo (nếu bật SampleDataSeed).
 _ = Task.Run(async () =>
 {
     try
