@@ -7,6 +7,7 @@ using NetURLScanner.Options;
 using NetURLScanner.Services;
 using System.Reflection;
 
+// Thiết lập DataDirectory trỏ về thư mục hiện tại để ứng dụng tìm thấy file database trong thư mục App_Data
 // Điểm vào ứng dụng ASP.NET Core — cấu hình DI, middleware, routing, seed dữ liệu khởi tạo.
 // DataDirectory trỏ tới thư mục chạy app — EF dùng |DataDirectory| trong connection string → file .mdf trong App_Data.
 AppDomain.CurrentDomain.SetData("DataDirectory", System.IO.Directory.GetCurrentDirectory());
