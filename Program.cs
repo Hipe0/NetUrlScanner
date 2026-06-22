@@ -8,6 +8,9 @@ using NetURLScanner.Services;
 using System.Reflection;
 
 // Điểm vào ứng dụng ASP.NET Core — cấu hình DI, middleware, routing, seed dữ liệu khởi tạo.
+// DataDirectory trỏ tới thư mục chạy app — EF dùng |DataDirectory| trong connection string → file .mdf trong App_Data.
+AppDomain.CurrentDomain.SetData("DataDirectory", System.IO.Directory.GetCurrentDirectory());
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Đọc cấu hình từ appsettings.json vào các lớp Options (Admin, OCR, Safe Browsing…).

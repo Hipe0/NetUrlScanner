@@ -21,8 +21,8 @@ obj/
 Thumbs.db
 
 # SQL Server local database files
-*.mdf
-*.ldf
+# *.mdf
+# *.ldf
 
 # ASP.NET Core secrets
 secrets.json
