@@ -7,6 +7,7 @@ using NetURLScanner.Models;
 
 namespace NetURLScanner.Controllers;
 
+/// <summary>Hồ sơ cá nhân — cập nhật thông tin, mật khẩu, hiển thị gói Premium/VIP.</summary>
 [Authorize]
 [Route("Profile")]
 public class ProfileController : AppControllerBase

@@ -20,9 +20,11 @@ obj/
 .DS_Store
 Thumbs.db
 
-# SQL Server local database files
-# *.mdf
-# *.ldf
+# SQL Server — file local, khong push Git
+*.mdf
+*.ldf
+database.bak
+scripts/
 
 # ASP.NET Core secrets
 secrets.json

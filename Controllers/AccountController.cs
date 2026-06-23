@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using NetURLScanner.Data;
+using NetURLScanner.Helpers;
 using NetURLScanner.Models;
 using NetURLScanner.Options;
 using System.Security.Claims;
@@ -153,7 +154,16 @@ namespace NetURLScanner.Controllers
                     _context.Users.Add(user);
                 }
 
-                await _context.SaveChangesAsync();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateException)
+                {
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    TempData["Error"] = "Không thể lưu tài khoản vào database. Hãy chạy lại app (dotnet run) hoặc lệnh: dotnet ef database update";
+                    return RedirectToAction(nameof(Login), new { returnUrl });
+                }
             }
 
             if (!user.IsActive)
@@ -240,21 +250,9 @@ namespace NetURLScanner.Controllers
             return View();
         }
 
-        private async Task SignInAppUserAsync(User user)
-        {
-            var claims = new List<Claim>
-            {
-                new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new(ClaimTypes.Name, user.Email),
-                new(ClaimTypes.Email, user.Email),
-                new(ClaimTypes.Role, user.Role)
-            };
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(identity));
-        }
+        /// <summary>Tạo cookie đăng nhập — claims gồm Role và IsPremium (navbar đọc DB qua ViewComponent).</summary>
+        private async Task SignInAppUserAsync(User user) =>
+            await AuthSignInHelper.SignInAsync(HttpContext, user);
 
         private IActionResult RedirectToLocal(string returnUrl)
         {

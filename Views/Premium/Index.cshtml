@@ -2,7 +2,8 @@
     ViewData["Title"] = "Nâng cấp Premium";
     var isPremium = ViewBag.IsAlreadyPremium == true;
     var isLoggedIn = User.Identity?.IsAuthenticated == true;
-    var transferNote = isLoggedIn ? $"NUS {User.Identity!.Name}" : "";
+    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var transferNote = isLoggedIn && !string.IsNullOrEmpty(userId) ? $"NUS{userId}" : "";
 }
 
 <div class="premium-page">
@@ -53,14 +54,14 @@
                     </div>
                 </div>
                 <ul class="pricing-features">
-                    <li><i class="bi bi-check2"></i>Quét URL & phân tích rủi ro</li>
-                    <li><i class="bi bi-check2"></i>Quét hàng loạt (CSV, Excel, PDF)</li>
-                    <li><i class="bi bi-check2"></i>Quét mã QR chứa URL</li>
-                    <li><i class="bi bi-check2"></i>Lịch sử quét & xuất báo cáo</li>
-                    <li><i class="bi bi-check2"></i>Báo cáo lừa đảo cộng đồng</li>
-                    <li><i class="bi bi-check2"></i>Kiểm tra chéo Google Safe Browsing</li>
-                    <li class="muted"><i class="bi bi-dash"></i>OCR quét ảnh</li>
-                    <li class="muted"><i class="bi bi-dash"></i>Tra cứu blacklist ngân hàng</li>
+                    <li><i class="bi bi-check2"></i><span>Quét URL &amp; phân tích rủi ro</span></li>
+                    <li><i class="bi bi-check2"></i><span>Quét hàng loạt (CSV, Excel, PDF)</span></li>
+                    <li><i class="bi bi-check2"></i><span>Quét mã QR chứa URL</span></li>
+                    <li><i class="bi bi-check2"></i><span>Lịch sử quét &amp; xuất báo cáo</span></li>
+                    <li><i class="bi bi-check2"></i><span>Báo cáo lừa đảo cộng đồng</span></li>
+                    <li><i class="bi bi-check2"></i><span>Kiểm tra chéo Google Safe Browsing</span></li>
+                    <li class="muted"><i class="bi bi-dash"></i><span>OCR quét ảnh</span></li>
+                    <li class="muted"><i class="bi bi-dash"></i><span>Tra cứu blacklist ngân hàng</span></li>
                 </ul>
                 @if (!isLoggedIn)
                 {
@@ -89,11 +90,14 @@
                     <p class="pricing-note small mb-0">Giá chính thức dự kiến: <s class="text-muted">49.000đ/tháng</s></p>
                 </div>
                 <ul class="pricing-features">
-                    <li><i class="bi bi-check2"></i><strong>Tất cả tính năng Cơ bản</strong></li>
-                    <li class="highlight"><i class="bi bi-check2-circle-fill"></i><strong>OCR</strong> — đọc URL/link từ ảnh SMS, email, screenshot</li>
-                    <li class="highlight"><i class="bi bi-check2-circle-fill"></i><strong>Tra cứu NH</strong> — đối chiếu STK với blacklist cộng đồng</li>
-                    <li><i class="bi bi-check2"></i>Phù hợp kiểm tra tin nhắn & hóa đơn giả</li>
-                    <li><i class="bi bi-check2"></i>Hỗ trợ ưu tiên qua hệ thống góp ý</li>
+                    <li><i class="bi bi-check2"></i><span><strong>Tất cả tính năng Cơ bản</strong></span></li>
+                    <li class="highlight"><i class="bi bi-check2-circle-fill"></i><span><strong>OCR</strong> — đọc URL/link từ ảnh SMS, email, screenshot</span></li>
+                    <li class="highlight"><i class="bi bi-check2-circle-fill"></i><span><strong>Tra cứu NH</strong> — đối chiếu STK với blacklist cộng đồng</span></li>
+                    <li><i class="bi bi-check2"></i><span>Phù hợp kiểm tra tin nhắn &amp; hóa đơn giả</span></li>
+                    <li><i class="bi bi-check2"></i><span>Hỗ trợ ưu tiên qua hệ thống góp ý</span></li>
+                    <li class="pricing-feature-fill" aria-hidden="true"><span></span></li>
+                    <li class="pricing-feature-fill" aria-hidden="true"><span></span></li>
+                    <li class="pricing-feature-fill" aria-hidden="true"><span></span></li>
                 </ul>
 
                 @if (isPremium)
@@ -118,19 +122,27 @@
         </div>
     </section>
 
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mx-auto mt-3" style="max-width: 720px;" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+        </div>
+    }
+
     @if (isLoggedIn && !isPremium)
     {
         <section class="collapse" id="premiumCheckout">
             <div class="premium-checkout">
                 <div class="row g-4 align-items-center">
                     <div class="col-md-5 text-center">
-                        <div class="premium-qr-wrap">
-                            <img src="https://img.vietqr.io/image/MB-0348059277-compact2.png?amount=0&addInfo=@Uri.EscapeDataString(transferNote)&accountName=HO%20DAC%20HIEP"
+                        <div class="premium-qr-wrap" id="premiumQrWrap">
+                            <img src="https://img.vietqr.io/image/MB-0348059277-compact2.png?addInfo=@Uri.EscapeDataString(transferNote)&accountName=HO%20DAC%20HIEP"
                                  alt="Mã QR chuyển khoản"
                                  class="premium-qr-img"
+                                 id="premiumQrImg"
                                  width="220"
                                  height="220"
-                                 loading="lazy"
                                  decoding="async" />
                         </div>
                         <p class="small text-muted mt-2 mb-0">Quét mã QR bằng app ngân hàng</p>
@@ -152,9 +164,9 @@
                         <p class="small text-muted mt-3 mb-3">
                             Sau khi chuyển khoản, nhấn nút bên dưới để kích hoạt Premium (mô phỏng — dùng cho môi trường thử nghiệm).
                         </p>
-                        <form asp-action="CheckoutMock" method="post">
+                        <form asp-controller="Premium" asp-action="CheckoutMock" method="post" id="premiumCheckoutForm">
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-warning btn-lg fw-bold" id="btnPay">
+                            <button type="button" class="btn btn-warning btn-lg fw-bold" id="btnPay">
                                 <i class="bi bi-check-circle me-2"></i>Tôi đã chuyển khoản xong
                             </button>
                         </form>
@@ -242,9 +254,77 @@
 
 @section Scripts {
     <script>
-        document.getElementById('btnPay')?.addEventListener('click', function () {
-            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang kích hoạt...';
-            this.disabled = true;
-        });
+        (function () {
+            const checkout = document.getElementById('premiumCheckout');
+            const qrImg = document.getElementById('premiumQrImg');
+            const form = document.getElementById('premiumCheckoutForm');
+            const btnPay = document.getElementById('btnPay');
+
+            // Panel thanh toán nằm trong collapse — khi mở thì cuộn tới và ép tải lại ảnh QR.
+            checkout?.addEventListener('shown.bs.collapse', function () {
+                checkout.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (qrImg?.src) {
+                    const base = qrImg.src.split('?')[0];
+                    const qs = qrImg.src.includes('?') ? qrImg.src.substring(qrImg.src.indexOf('?') + 1) : '';
+                    qrImg.src = base + '?' + qs + '&_=' + Date.now();
+                }
+            });
+
+            qrImg?.addEventListener('error', function () {
+                const wrap = document.getElementById('premiumQrWrap');
+                if (wrap) {
+                    wrap.innerHTML = '<div class="p-3 text-center small text-muted">Không tải được mã QR từ VietQR.<br>Bạn có thể chuyển khoản thủ công theo thông tin bên cạnh,<br>rồi nhấn <strong>Tôi đã chuyển khoản xong</strong>.</div>';
+                }
+            });
+
+            // Kích hoạt Premium qua AJAX — giữ cookie đăng nhập, tránh POST form redirect về Login.
+            btnPay?.addEventListener('click', async function () {
+                if (!form) return;
+                const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                if (!token) {
+                    alert('Phiên làm việc hết hạn. Vui lòng tải lại trang.');
+                    return;
+                }
+
+                btnPay.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang kích hoạt...';
+                btnPay.disabled = true;
+
+                try {
+                    const body = new URLSearchParams();
+                    body.append('__RequestVerificationToken', token);
+
+                    const res = await fetch('/Premium/CheckoutAjax', {
+                        method: 'POST',
+                        headers: { 'RequestVerificationToken': token },
+                        body,
+                        credentials: 'same-origin'
+                    });
+
+                    if (res.redirected && res.url.includes('/Account/Login')) {
+                        window.location.href = res.url;
+                        return;
+                    }
+
+                    const data = await res.json();
+                    if (data.success) {
+                        window.location.href = data.redirectUrl || '/Premium/Success';
+                        return;
+                    }
+
+                    if (data.requireLogin && data.loginUrl) {
+                        window.location.href = data.loginUrl;
+                        return;
+                    }
+
+                    alert(data.message || 'Không thể kích hoạt Premium.');
+                    btnPay.innerHTML = '<i class="bi bi-check-circle me-2"></i>Tôi đã chuyển khoản xong';
+                    btnPay.disabled = false;
+                } catch {
+                    alert('Lỗi kết nối. Vui lòng thử lại.');
+                    btnPay.innerHTML = '<i class="bi bi-check-circle me-2"></i>Tôi đã chuyển khoản xong';
+                    btnPay.disabled = false;
+                }
+            });
+        })();
     </script>
 }

@@ -1119,6 +1119,50 @@ main:has(.auth-page) {
     margin-bottom: 1rem;
 }
 
+.nav-vip-badge,
+.badge-vip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    vertical-align: middle;
+    background: linear-gradient(135deg, rgba(var(--bs-warning-rgb), 0.3), rgba(var(--bs-warning-rgb), 0.1));
+    border: 1px solid rgba(var(--bs-warning-rgb), 0.5);
+    color: var(--bs-warning);
+}
+
+.profile-plan {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.profile-plan-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.profile-plan-vip .profile-plan-icon {
+    color: var(--bs-warning);
+}
+
+.nav-vip-dot {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--bs-warning);
+    border: 1px solid var(--bs-body-bg);
+}
+
 .premium-hero-title {
     font-size: clamp(1.75rem, 4vw, 2.35rem);
     font-weight: 800;
@@ -1158,6 +1202,16 @@ main:has(.auth-page) {
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-left: auto;
+}
+
+.premium-pricing-row {
+    align-items: stretch;
+}
+
+.premium-pricing-row .pricing-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .pricing-card {
@@ -1245,15 +1299,29 @@ main:has(.auth-page) {
     list-style: none;
     padding: 0;
     margin: 1.5rem 0;
+    flex: 1 1 auto;
 }
 
 .pricing-features li {
     display: flex;
     align-items: flex-start;
-    gap: 0.6rem;
-    padding: 0.45rem 0;
+    gap: 0.65rem;
+    padding: 0.5rem 0;
     font-size: 0.92rem;
+    line-height: 1.45;
     border-bottom: 1px solid var(--bs-border-color-translucent);
+}
+
+.pricing-features li > span {
+    flex: 1;
+    min-width: 0;
+}
+
+.pricing-features li.pricing-feature-fill {
+    visibility: hidden;
+    border-bottom-color: transparent;
+    padding: 0.5rem 0;
+    pointer-events: none;
 }
 
 .pricing-features li:last-child {
@@ -1262,8 +1330,10 @@ main:has(.auth-page) {
 
 .pricing-features li i {
     flex-shrink: 0;
-    margin-top: 0.15rem;
+    width: 1.1rem;
+    margin-top: 0.12rem;
     font-size: 1rem;
+    text-align: center;
 }
 
 .pricing-features li.highlight {

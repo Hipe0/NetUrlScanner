@@ -148,10 +148,7 @@
                     <div class="d-flex align-items-center ms-auto mt-2 mt-sm-0 gap-2">
                         @if (User?.Identity?.IsAuthenticated == true)
                         {
-                            <a asp-controller="Profile" asp-action="Index" class="btn btn-outline-secondary btn-sm" title="Hồ sơ cá nhân">
-                                <i class="bi bi-person-circle"></i>
-                            </a>
-                            <span class="text-muted me-2 d-none d-md-inline">Xin chào, @User.Identity.Name</span>
+                            @await Component.InvokeAsync("NavUserInfo")
                             <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                 <button type="submit" class="btn btn-outline-danger btn-sm">Đăng xuất</button>
                             </form>

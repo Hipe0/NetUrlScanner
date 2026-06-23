@@ -13,9 +13,54 @@
                     <h5 class="fw-bold mb-1">@(Model.FullName ?? Model.Email)</h5>
                     <p class="text-muted small mb-2">@Model.Email</p>
                     <span class="badge bg-primary">@Model.Role</span>
+                    @if (Model.IsPremium)
+                    {
+                        <span class="badge badge-vip ms-1"><i class="bi bi-star-fill me-1"></i>VIP Premium</span>
+                    }
                     @if (!string.IsNullOrEmpty(Model.GoogleSubjectId))
                     {
                         <span class="badge bg-light text-dark border ms-1"><i class="bi bi-google me-1"></i>Google</span>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 mt-3">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">Gói dịch vụ</h6>
+                    @if (Model.IsPremium)
+                    {
+                        <div class="profile-plan profile-plan-vip">
+                            <div class="profile-plan-icon">
+                                <i class="bi bi-patch-check-fill"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">Premium (VIP)</div>
+                                <div class="text-muted small">OCR quét ảnh và tra cứu ngân hàng đã được mở khóa.</div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            <a asp-controller="OcrScan" asp-action="Index" class="btn btn-sm btn-warning">
+                                <i class="bi bi-image me-1"></i>Quét OCR
+                            </a>
+                            <a asp-controller="BankAccountChecker" asp-action="Index" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-bank me-1"></i>Tra cứu NH
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="profile-plan profile-plan-free">
+                            <div class="profile-plan-icon text-muted">
+                                <i class="bi bi-box"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">Gói miễn phí</div>
+                                <div class="text-muted small">Nâng cấp Premium để dùng OCR và tra cứu blacklist ngân hàng.</div>
+                            </div>
+                        </div>
+                        <a asp-controller="Premium" asp-action="Index" class="btn btn-sm btn-warning mt-3">
+                            <i class="bi bi-star-fill me-1"></i>Nâng cấp Premium
+                        </a>
                     }
                 </div>
             </div>

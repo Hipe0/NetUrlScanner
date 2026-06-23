@@ -1,0 +1,18 @@
+@model NetURLScanner.ViewComponents.NavUserInfoModel
+
+<a asp-controller="Profile" asp-action="Index" class="btn btn-outline-secondary btn-sm position-relative" title="@(Model.IsPremium ? "Hồ sơ cá nhân (VIP Premium)" : "Hồ sơ cá nhân")">
+    <i class="bi bi-person-circle"></i>
+    @if (Model.IsPremium)
+    {
+        <span class="nav-vip-dot" title="Gói Premium"></span>
+    }
+</a>
+<span class="text-muted me-2 d-none d-md-inline">
+    Xin chào, @Model.Email
+    @if (Model.IsPremium)
+    {
+        <span class="nav-vip-badge ms-1" title="Gói Premium đang hoạt động">
+            <i class="bi bi-star-fill"></i> VIP
+        </span>
+    }
+</span>

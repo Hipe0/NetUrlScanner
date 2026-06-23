@@ -7,11 +7,10 @@ using NetURLScanner.Options;
 using NetURLScanner.Services;
 using System.Reflection;
 
-// Điểm vào ứng dụng ASP.NET Core — cấu hình DI, middleware, routing, seed dữ liệu khởi tạo.
-// DataDirectory trỏ tới thư mục chạy app — EF dùng |DataDirectory| trong connection string → file .mdf trong App_Data.
-AppDomain.CurrentDomain.SetData("DataDirectory", System.IO.Directory.GetCurrentDirectory());
-
 var builder = WebApplication.CreateBuilder(args);
+
+// LocalDB: Server=(localdb)\MSSQLLocalDB;Database=NetURLScannerDb
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
 
 // Đọc cấu hình từ appsettings.json vào các lớp Options (Admin, OCR, Safe Browsing…).
 builder.Services.Configure<AdminSeedOptions>(
@@ -51,12 +50,10 @@ builder.Services.AddSwaggerGen(options =>
     }
 });
 
-// EF Core — mỗi HTTP request nhận một DbContext (Scoped), tự dispose sau request.
+// EF Core + tự migrate schema khi khởi động (tạo DB nếu chưa có).
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString));
 
-builder.Services.Configure<OcrOptions>(
-    builder.Configuration.GetSection(OcrOptions.SectionName));
 builder.Services.Configure<GoogleAuthOptions>(
     builder.Configuration.GetSection(GoogleAuthOptions.SectionName));
 
@@ -107,8 +104,6 @@ builder.Services.AddScoped<UrlExtractionService>();
 builder.Services.AddHttpClient<IBankAccountLookupService, VietQrBankService>();
 
 var app = builder.Build();
-
-
 
 if (!app.Environment.IsDevelopment())
 {
@@ -161,35 +156,25 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Landing}/{id?}");
 
-// Seed chạy nền khi app khởi động — không chặn việc lắng nghe HTTP.
-// Tạo admin, CMS mẫu, dữ liệu demo (nếu bật SampleDataSeed).
-_ = Task.Run(async () =>
+// Migrate DB + seed trước khi nhận request — tránh lỗi ghi dữ liệu (Google login, Premium…).
+try
 {
-    try
-    {
-        using var scope = app.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        _ = await db.UrlScans.AnyAsync();
-        _ = await db.TrustedBrands.AnyAsync();
-        _ = await db.BlacklistedDomains.AnyAsync();
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await db.Database.MigrateAsync();
 
-        var adminSeed = scope.ServiceProvider.GetRequiredService<AdminSeedService>();
-        await adminSeed.SeedAsync();
+    var adminSeed = scope.ServiceProvider.GetRequiredService<AdminSeedService>();
+    await adminSeed.SeedAsync();
 
-        var cmsSeed = scope.ServiceProvider.GetRequiredService<CmsSeedService>();
-        await cmsSeed.SeedAsync();
+    var cmsSeed = scope.ServiceProvider.GetRequiredService<CmsSeedService>();
+    await cmsSeed.SeedAsync();
 
-        var sampleDataSeed = scope.ServiceProvider.GetRequiredService<SampleDataSeedService>();
-        await sampleDataSeed.SeedAsync();
-
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
-        _ = await client.GetAsync("http://ip-api.com/json/8.8.8.8");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error during startup: {ex.Message}");
-        // Fail silently
-    }
-});
+    var sampleDataSeed = scope.ServiceProvider.GetRequiredService<SampleDataSeedService>();
+    await sampleDataSeed.SeedAsync();
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error during startup database/seed: {ex.Message}");
+}
 
 app.Run();
