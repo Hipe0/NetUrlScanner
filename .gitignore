@@ -23,7 +23,7 @@ Thumbs.db
 # SQL Server — file local, khong push Git
 *.mdf
 *.ldf
-database.bak
+# database.bak
 scripts/
 
 # ASP.NET Core secrets
