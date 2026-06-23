@@ -7,6 +7,7 @@ using NetURLScanner.Options;
 using NetURLScanner.Services;
 using System.Reflection;
 
+// Điểm vào ứng dụng — cấu hình DI, middleware, migrate DB + seed khi khởi động.
 var builder = WebApplication.CreateBuilder(args);
 
 // LocalDB: Server=(localdb)\MSSQLLocalDB;Database=NetURLScannerDb
