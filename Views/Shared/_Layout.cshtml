@@ -28,8 +28,8 @@
 </head>
 
 <body
-    data-flash-success="@(TempData["Success"] != null ? System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(TempData["Success"]!.ToString()!) : null)"
-    data-flash-error="@(TempData["Error"] != null ? System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(TempData["Error"]!.ToString()!) : null)">
+    data-flash-success="@TempData["Success"]"
+    data-flash-error="@TempData["Error"]">
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm bg-body-tertiary border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -148,7 +148,7 @@
                     <div class="d-flex align-items-center ms-auto mt-2 mt-sm-0 gap-2">
                         @if (User?.Identity?.IsAuthenticated == true)
                         {
-                            @await Component.InvokeAsync("NavUserInfo")
+                            <partial name="_NavUserInfo" />
                             <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                 <button type="submit" class="btn btn-outline-danger btn-sm">Đăng xuất</button>
                             </form>

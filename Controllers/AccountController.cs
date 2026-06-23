@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using NetURLScanner.Data;
-using NetURLScanner.Helpers;
 using NetURLScanner.Models;
 using NetURLScanner.Options;
+using NetURLScanner.Services;
 using System.Security.Claims;
 
 namespace NetURLScanner.Controllers
@@ -17,11 +17,13 @@ namespace NetURLScanner.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly GoogleAuthOptions _googleAuth;
+        private readonly UserAuthService _userAuth;
 
-        public AccountController(ApplicationDbContext context, IOptions<GoogleAuthOptions> googleAuth)
+        public AccountController(ApplicationDbContext context, IOptions<GoogleAuthOptions> googleAuth, UserAuthService userAuth)
         {
             _context = context;
             _googleAuth = googleAuth.Value;
+            _userAuth = userAuth;
         }
 
         private bool IsGoogleAuthEnabled =>
@@ -82,7 +84,7 @@ namespace NetURLScanner.Controllers
                 return View();
             }
 
-            await SignInAppUserAsync(user);
+            await _userAuth.SignInAsync(HttpContext, user);
             return RedirectToLocal(returnUrl);
         }
 
@@ -173,7 +175,7 @@ namespace NetURLScanner.Controllers
                 return RedirectToAction(nameof(Login), new { returnUrl });
             }
 
-            await SignInAppUserAsync(user);
+            await _userAuth.SignInAsync(HttpContext, user);
             return RedirectToLocal(returnUrl);
         }
 
@@ -249,10 +251,6 @@ namespace NetURLScanner.Controllers
         {
             return View();
         }
-
-        /// <summary>Tạo cookie đăng nhập — claims gồm Role và IsPremium (navbar đọc DB qua ViewComponent).</summary>
-        private async Task SignInAppUserAsync(User user) =>
-            await AuthSignInHelper.SignInAsync(HttpContext, user);
 
         private IActionResult RedirectToLocal(string returnUrl)
         {

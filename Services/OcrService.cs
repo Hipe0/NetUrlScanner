@@ -4,6 +4,7 @@ using Tesseract;
 
 namespace NetURLScanner.Services;
 
+/// <summary>Tesseract OCR — cần thư mục tessdata/*.traineddata trong repo.</summary>
 public class OcrResult
 {
     public bool Success { get; set; }

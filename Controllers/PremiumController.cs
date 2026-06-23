@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetURLScanner.Data;
-using NetURLScanner.Helpers;
+using NetURLScanner.Services;
 using System.Security.Claims;
 
 namespace NetURLScanner.Controllers
@@ -12,10 +12,12 @@ namespace NetURLScanner.Controllers
     public class PremiumController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserAuthService _userAuth;
 
-        public PremiumController(ApplicationDbContext context)
+        public PremiumController(ApplicationDbContext context, UserAuthService userAuth)
         {
             _context = context;
+            _userAuth = userAuth;
         }
 
         [HttpGet]
@@ -110,8 +112,7 @@ namespace NetURLScanner.Controllers
             {
                 user.IsPremium = true;
                 await _context.SaveChangesAsync();
-                // Cập nhật cookie claim — navbar đọc DB qua ViewComponent, nhưng claim vẫn đồng bộ cho chỗ khác.
-                await AuthSignInHelper.SignInAsync(HttpContext, user);
+                await _userAuth.SignInAsync(HttpContext, user);
             }
             catch (Exception)
             {

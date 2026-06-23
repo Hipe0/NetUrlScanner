@@ -7,6 +7,7 @@ using System.Security.Claims;
 
 namespace NetURLScanner.Controllers;
 
+/// <summary>Quét OCR ảnh (Premium) — Tesseract đọc chữ, trích URL, quét rủi ro.</summary>
 [Authorize(Roles = "Admin,Manager,User")]
 [Route("OcrScan")]
 public class OcrScanController : AppControllerBase

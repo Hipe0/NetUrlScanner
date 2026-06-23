@@ -87,13 +87,14 @@ if (googleAuth.Enabled &&
 
 // Đăng ký các service nghiệp vụ — Scoped = một instance mỗi HTTP request.
 builder.Services.AddScoped<UrlScannerService>();
+builder.Services.AddScoped<UserAuthService>();
 builder.Services.AddScoped<AdminSeedService>();
 builder.Services.Configure<GeminiOptions>(
     builder.Configuration.GetSection(GeminiOptions.SectionName));
 
 builder.Services.AddHttpClient<GeminiChatService>(client =>
 {
-    client.Timeout = TimeSpan.FromSeconds(20);
+    client.Timeout = TimeSpan.FromSeconds(60); // Gemini đôi khi chậm khi server quá tải
 });
 builder.Services.AddScoped<SampleDataSeedService>();
 builder.Services.AddScoped<CmsSeedService>();
@@ -101,6 +102,7 @@ builder.Services.AddScoped<ContentCategorizationService>();
 builder.Services.AddScoped<GoogleSafeBrowsingService>();
 builder.Services.AddScoped<DomainVoteService>();
 builder.Services.AddScoped<OcrService>();
+builder.Services.AddScoped<QrScanService>();
 builder.Services.AddScoped<UrlExtractionService>();
 builder.Services.AddHttpClient<IBankAccountLookupService, VietQrBankService>();
 
@@ -153,6 +155,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapControllers();
+
+// /Premium, /User, /BankAccountChecker... → action Index (route mặc định dùng Landing cho Home).
+app.MapControllerRoute(
+    name: "controller-index",
+    pattern: "{controller}",
+    defaults: new { action = "Index" },
+    constraints: new { controller = @"^(Premium|User|BankAccountChecker|ScamReport)$" });
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Landing}/{id?}");

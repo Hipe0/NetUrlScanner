@@ -1,62 +1,210 @@
+@model NetURLScanner.Controllers.QrScanPageModel
 @{
     ViewData["Title"] = "Quét mã QR";
 }
 
 <div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-primary text-white py-3">
-                    <h4 class="mb-0 fw-bold"><i class="bi bi-qr-code-scan me-2"></i>Quét mã QR chứa URL</h4>
+    <h2 class="fw-bold mb-2"><i class="bi bi-qr-code-scan me-2"></i>Quét mã QR chứa URL</h2>
+    <p class="text-muted mb-4">
+        Upload ảnh mã QR hoặc dùng camera — hệ thống đọc URL và quét rủi ro ngay trên trang này.
+    </p>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+            <form id="qrScanForm" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="qrTextFromCamera" id="qrTextFromCamera" value="" />
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Chọn ảnh QR</label>
+                    <input type="file" name="qrImage" id="qrImageInput" class="form-control" accept="image/*" />
+                    <div class="form-text">JPG, PNG, WEBP, BMP — tối đa 5MB. Ảnh lưu tại <code>uploads/qr-images/</code></div>
                 </div>
-                <div class="card-body p-4">
-                    <p class="text-muted">Hướng camera hoặc upload ảnh QR — hệ thống trích URL và quét ngay.</p>
-                    <div id="qr-reader" class="rounded overflow-hidden mb-3" style="max-width:400px;margin:0 auto;"></div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Hoặc upload ảnh QR</label>
-                        <input type="file" id="qrFileInput" class="form-control" accept="image/*" />
-                    </div>
-                    <div id="qrResult" class="alert alert-info d-none"></div>
-                    <a id="qrScanLink" href="#" class="btn btn-primary d-none"><i class="bi bi-search me-1"></i>Quét URL này</a>
-                </div>
-            </div>
+                <button type="submit" class="btn btn-primary" id="uploadScanBtn">
+                    <i class="bi bi-search me-1"></i>Đọc QR & quét URL
+                </button>
+            </form>
         </div>
     </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent fw-bold">Hoặc quét bằng camera</div>
+        <div class="card-body p-4">
+            <div id="qr-reader" class="rounded overflow-hidden mb-3" style="max-width:400px;margin:0 auto;"></div>
+            <div id="cameraHint" class="text-muted small mb-2">Hướng camera vào mã QR. Khi đọc được URL, nhấn nút bên dưới để quét.</div>
+            <div id="cameraDetected" class="alert alert-info d-none mb-3">
+                <div class="fw-semibold mb-1">URL đọc được từ camera:</div>
+                <div id="cameraUrlPreview" class="text-break-all small"></div>
+            </div>
+            <button type="submit" form="qrScanForm" class="btn btn-outline-primary d-none" id="cameraScanBtn">
+                <i class="bi bi-search me-1"></i>Quét URL từ camera
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="cameraRescanBtn">
+                <i class="bi bi-camera me-1"></i>Quét lại
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SavedImagePath) || Model.FromCamera || !string.IsNullOrEmpty(Model.QrText))
+    {
+        <div class="row g-4">
+            @if (!string.IsNullOrEmpty(Model.SavedImagePath))
+            {
+                <div class="col-lg-5">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-transparent fw-bold">Ảnh đã upload</div>
+                        <div class="card-body text-center">
+                            <img src="@Model.SavedImagePath" alt="Ảnh QR" class="img-fluid rounded border" style="max-height:420px;object-fit:contain;" />
+                        </div>
+                    </div>
+                </div>
+            }
+            <div class="@(string.IsNullOrEmpty(Model.SavedImagePath) ? "col-12" : "col-lg-7")">
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-header bg-transparent fw-bold">Nội dung mã QR</div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrWhiteSpace(Model.QrText))
+                        {
+                            <pre class="mb-0 small bg-body-tertiary p-3 rounded border" style="white-space:pre-wrap;max-height:120px;overflow:auto;">@Model.QrText</pre>
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0">Không có nội dung.</p>
+                        }
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.ExtractedUrl))
+                {
+                    <div class="card shadow-sm border-0 mb-3">
+                        <div class="card-header bg-transparent fw-bold">URL trích xuất</div>
+                        <div class="card-body">
+                            <p class="mb-0 text-break-all small">@Model.ExtractedUrl</p>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.ScanResult != null)
+                {
+                    var item = Model.ScanResult;
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-transparent fw-bold">Kết quả quét</div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead><tr><th>URL</th><th>Rủi ro</th><th></th></tr></thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-break-all small">@item.Url</td>
+                                        <td>
+                                            @if (item.Success)
+                                            {
+                                                <span class="badge @(item.RiskLevel == "Safe" ? "bg-success" : item.RiskLevel == "Warning" ? "bg-warning text-dark" : "bg-danger")">
+                                                    @item.RiskLevel (@item.RiskScore)
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-danger small">@item.ErrorMessage</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (item.ScanId.HasValue)
+                                            {
+                                                <a asp-controller="UrlScanner" asp-action="Details" asp-route-id="@item.ScanId" class="btn btn-sm btn-outline-primary">Chi tiết</a>
+                                            }
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
 </div>
 
 @section Scripts {
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const resultEl = document.getElementById('qrResult');
-            const linkEl = document.getElementById('qrScanLink');
-
-            function showUrl(url) {
-                resultEl.textContent = 'URL: ' + url;
-                resultEl.classList.remove('d-none');
-                linkEl.href = '/Scan?url=' + encodeURIComponent(url);
-                linkEl.classList.remove('d-none');
-                window.location.href = linkEl.href;
-            }
-
             if (typeof Html5Qrcode === 'undefined') return;
 
-            const scanner = new Html5Qrcode('qr-reader');
-            Html5Qrcode.getCameras().then(cameras => {
-                if (cameras.length) {
-                    scanner.start(cameras[0].id, { fps: 10, qrbox: 220 }, showUrl, () => {});
-                }
-            }).catch(() => {});
+            const hiddenInput = document.getElementById('qrTextFromCamera');
+            const fileInput = document.getElementById('qrImageInput');
+            const detectedBox = document.getElementById('cameraDetected');
+            const urlPreview = document.getElementById('cameraUrlPreview');
+            const cameraScanBtn = document.getElementById('cameraScanBtn');
+            const cameraRescanBtn = document.getElementById('cameraRescanBtn');
+            const cameraHint = document.getElementById('cameraHint');
 
-            document.getElementById('qrFileInput')?.addEventListener('change', async e => {
-                const file = e.target.files?.[0];
-                if (!file) return;
+            const scanner = new Html5Qrcode('qr-reader');
+            let cameraId = null;
+            let cameraRunning = false;
+
+            function showCameraUrl(text) {
+                hiddenInput.value = text;
+                urlPreview.textContent = text;
+                detectedBox.classList.remove('d-none');
+                cameraScanBtn.classList.remove('d-none');
+                cameraRescanBtn.classList.remove('d-none');
+                cameraHint.classList.add('d-none');
+                if (fileInput) fileInput.value = '';
+            }
+
+            function clearCameraUrl() {
+                hiddenInput.value = '';
+                urlPreview.textContent = '';
+                detectedBox.classList.add('d-none');
+                cameraScanBtn.classList.add('d-none');
+                cameraRescanBtn.classList.add('d-none');
+                cameraHint.classList.remove('d-none');
+            }
+
+            async function stopCamera() {
+                if (!cameraRunning) return;
                 try {
-                    const url = await scanner.scanFile(file, true);
-                    showUrl(url);
-                } catch {
-                    resultEl.textContent = 'Không đọc được QR trong ảnh.';
-                    resultEl.classList.remove('d-none');
+                    await scanner.stop();
+                } catch (_) { /* ignore */ }
+                cameraRunning = false;
+            }
+
+            async function startCamera() {
+                clearCameraUrl();
+                const cameras = await Html5Qrcode.getCameras();
+                if (!cameras.length) return;
+                cameraId = cameras[0].id;
+                await scanner.start(
+                    cameraId,
+                    { fps: 10, qrbox: 220 },
+                    async (decodedText) => {
+                        await stopCamera();
+                        showCameraUrl(decodedText);
+                    },
+                    () => {}
+                );
+                cameraRunning = true;
+            }
+
+            Html5Qrcode.getCameras()
+                .then(cameras => {
+                    if (!cameras.length) {
+                        cameraHint.textContent = 'Không tìm thấy camera. Vui lòng upload ảnh QR.';
+                        return;
+                    }
+                    return startCamera();
+                })
+                .catch(() => {
+                    cameraHint.textContent = 'Không mở được camera. Vui lòng upload ảnh QR.';
+                });
+
+            cameraRescanBtn?.addEventListener('click', async () => {
+                await stopCamera();
+                await startCamera();
+            });
+
+            document.getElementById('qrScanForm')?.addEventListener('submit', () => {
+                if (hiddenInput.value) {
+                    if (fileInput) fileInput.removeAttribute('required');
                 }
             });
         });

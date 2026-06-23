@@ -19,7 +19,7 @@ window.showToast = function (message, type = 'success') {
             <div class="d-flex">
                 <div class="toast-body d-flex align-items-center gap-2">
                     <i class="bi ${iconClass} fs-5"></i>
-                    <div>${message}</div>
+                    <div class="toast-message"></div>
                 </div>
                 <button type="button" class="btn-close btn-close-white m-auto me-3" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
@@ -28,6 +28,7 @@ window.showToast = function (message, type = 'success') {
 
     container.insertAdjacentHTML('beforeend', toastHtml);
     const toastEl = document.getElementById(toastId);
+    toastEl.querySelector('.toast-message').textContent = message;
 
     if (window.bootstrap && window.bootstrap.Toast) {
         const toast = new bootstrap.Toast(toastEl);
@@ -67,6 +68,7 @@ function initThemeToggle() {
 }
 
 function initFlashToasts() {
+    // TempData Success/Error từ server — đọc data-flash-* trên body (tiếng Việt UTF-8)
     const body = document.body;
     const success = body?.dataset.flashSuccess;
     const error = body?.dataset.flashError;
